@@ -24,9 +24,9 @@ int main(){
   GPIOC->CRH = (GPIOC->CRH & ~(0b1111 << 20)) | 0b1 << 20;
 
   while(1){
-    GPIOC->ODR &= ~(1<<13); // let it float
+    GPIOC->ODR &= ~(1<<13); // on pulled to gnd
     delay(50000);
-    GPIOC->ODR |= 1<<13;    // pull to ground
+    GPIOC->ODR |= 1<<13;    // off let it float
     delay(300000);
   }
   return 0;
