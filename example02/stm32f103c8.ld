@@ -10,7 +10,7 @@ MEMORY
 
 SECTIONS
 {
-	.text :
+	.isr_vectors :
 	{
 	KEEP(*(.isr_vectors))
 	} > flash

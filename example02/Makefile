@@ -9,10 +9,10 @@ OBJNM=arm-none-eabi-nm
 OBJREADELF=arm-none-eabi-readelf
 OBJSIZE=arm-none-eabi-size
 
-SOURCES=$(wildcard *.c)
-OBJECTS=$(SOURCES:.c=.o)
-DEPS=$(SOURCES:.c=.d)
-TARGET=$(SOURCES:.c=)
+SRCS=$(wildcard *.c)
+OBJS=$(SRCS:.c=.o)
+DEPS=$(SRCS:.c=.d)
+TARGET=$(SRCS:.c=)
 
 BIN=$(TARGET).bin
 ELF=$(TARGET).elf
@@ -52,7 +52,7 @@ $(LSS):
 .PHONY: clean debug size upload
 
 clean:
-	rm -f $(OBJECTS) $(DEPS) $(TARGET) $(BIN) $(ELF) $(HEX) $(LSS) $(SYM)
+	rm -f $(OBJS) $(DEPS) $(TARGET) $(BIN) $(ELF) $(HEX) $(LSS) $(SYM)
 
 debug: upload
 	openocd $(OPENOCD_ARGS) & xterm -e arm-none-eabi-gdb -ex "target remote :3333" -ex 'layout split' $(ELF)
