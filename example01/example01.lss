@@ -1,0 +1,98 @@
+
+Hex dump of section '.isr_vectors':
+  0x08000000 00500020 51000008 00000000 00000000 .P. Q...........
+  0x08000010 00000000 00000000 00000000 00000000 ................
+  0x08000020 00000000 00000000 00000000 00000000 ................
+  0x08000030 00000000 00000000 00000000          ............
+
+
+example01.elf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+0800003c <delay>:
+	}
+	return 0;
+}
+
+void delay(unsigned a){
+	volatile unsigned b=0;
+ 800003c:	2300      	movs	r3, #0
+void delay(unsigned a){
+ 800003e:	b082      	sub	sp, #8
+	volatile unsigned b=0;
+ 8000040:	9301      	str	r3, [sp, #4]
+
+	while(b++ < a);
+ 8000042:	9b01      	ldr	r3, [sp, #4]
+ 8000044:	1c5a      	adds	r2, r3, #1
+ 8000046:	4283      	cmp	r3, r0
+ 8000048:	9201      	str	r2, [sp, #4]
+ 800004a:	d3fa      	bcc.n	8000042 <delay+0x6>
+
+	return;
+} 
+ 800004c:	b002      	add	sp, #8
+ 800004e:	4770      	bx	lr
+
+08000050 <_start>:
+
+//__attribute((naked,used))
+void _start() {
+  // set stack pointer to top of stack
+  asm volatile ("ldr r1,=0x20005000");
+ 8000050:	4901      	ldr	r1, [pc, #4]	; (8000058 <_start+0x8>)
+  asm volatile ("mov sp,r1");
+ 8000052:	468d      	mov	sp, r1
+     memcpy flash data to ram data
+     call global constructors * even c has them
+     then call main
+  */
+    
+  main();
+ 8000054:	f000 f802 	bl	800005c <main>
+ 8000058:	20005000 	.word	0x20005000
+
+0800005c <main>:
+	RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+ 800005c:	4a0e      	ldr	r2, [pc, #56]	; (8000098 <main+0x3c>)
+int main(){
+ 800005e:	b508      	push	{r3, lr}
+	RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+ 8000060:	6993      	ldr	r3, [r2, #24]
+	GPIOC->CRH = (GPIOC->CRH & ~(0b1111 << 20)) | 0b1 << 20;
+ 8000062:	490e      	ldr	r1, [pc, #56]	; (800009c <main+0x40>)
+	RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+ 8000064:	f043 0310 	orr.w	r3, r3, #16
+ 8000068:	6193      	str	r3, [r2, #24]
+	GPIOC->CRH = (GPIOC->CRH & ~(0b1111 << 20)) | 0b1 << 20;
+ 800006a:	684b      	ldr	r3, [r1, #4]
+		delay(300000);
+ 800006c:	4c0c      	ldr	r4, [pc, #48]	; (80000a0 <main+0x44>)
+	GPIOC->CRH = (GPIOC->CRH & ~(0b1111 << 20)) | 0b1 << 20;
+ 800006e:	f423 0370 	bic.w	r3, r3, #15728640	; 0xf00000
+ 8000072:	f443 1380 	orr.w	r3, r3, #1048576	; 0x100000
+ 8000076:	604b      	str	r3, [r1, #4]
+		GPIOC->ODR &= ~(1<<13); // let it float
+ 8000078:	68cb      	ldr	r3, [r1, #12]
+		delay(50000);
+ 800007a:	f24c 3050 	movw	r0, #50000	; 0xc350
+		GPIOC->ODR &= ~(1<<13); // let it float
+ 800007e:	f423 5300 	bic.w	r3, r3, #8192	; 0x2000
+ 8000082:	60cb      	str	r3, [r1, #12]
+		delay(50000);
+ 8000084:	f7ff ffda 	bl	800003c <delay>
+		GPIOC->ODR |= 1<<13;    // pull to ground
+ 8000088:	68cb      	ldr	r3, [r1, #12]
+		delay(300000);
+ 800008a:	4620      	mov	r0, r4
+		GPIOC->ODR |= 1<<13;    // pull to ground
+ 800008c:	f443 5300 	orr.w	r3, r3, #8192	; 0x2000
+ 8000090:	60cb      	str	r3, [r1, #12]
+		delay(300000);
+ 8000092:	f7ff ffd3 	bl	800003c <delay>
+ 8000096:	e7ef      	b.n	8000078 <main+0x1c>
+ 8000098:	40021000 	.word	0x40021000
+ 800009c:	40011000 	.word	0x40011000
+ 80000a0:	000493e0 	.word	0x000493e0
