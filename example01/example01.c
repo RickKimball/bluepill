@@ -18,26 +18,26 @@ const vector isr_handlers[1+14] =
 };
 
 int main(){
-	RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+  RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 
-  // make PC13 input floating
-	GPIOC->CRH = (GPIOC->CRH & ~(0b1111 << 20)) | 0b1 << 20;
+  // make PC13 opendrain
+  GPIOC->CRH = (GPIOC->CRH & ~(0b1111 << 20)) | 0b1 << 20;
 
-	while(1){
-		GPIOC->ODR &= ~(1<<13); // let it float
-		delay(50000);
-		GPIOC->ODR |= 1<<13;    // pull to ground
-		delay(300000);
-	}
-	return 0;
+  while(1){
+    GPIOC->ODR &= ~(1<<13); // let it float
+    delay(50000);
+    GPIOC->ODR |= 1<<13;    // pull to ground
+    delay(300000);
+  }
+  return 0;
 }
 
 void delay(unsigned a){
-	volatile unsigned b=0;
+  volatile unsigned b=0;
 
-	while(b++ < a);
+  while(b++ < a);
 
-	return;
+  return;
 } 
 
 //__attribute((naked,used))
