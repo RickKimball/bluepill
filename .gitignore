@@ -29,6 +29,8 @@
 *.dylib
 
 # Executables
+*.elf
+*.bin
 *.exe
 *.out
 *.app
@@ -41,6 +43,10 @@
 *.su
 *.idb
 *.pdb
+
+# Generated listing files
+*.sym
+*.lss
 
 # Kernel Module Compile Results
 *.mod*
