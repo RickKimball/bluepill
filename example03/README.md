@@ -3,7 +3,7 @@
 
 This example compiles and links 3 files 
 
-  * **vector.c ** - contains the exception handlers and vector table
+  * **vector.c** - contains the exception handlers and vector table
   * **utils.c** - contains the delay() routine that isn't actually used
   * **example03.c** - contains the main() 
 
