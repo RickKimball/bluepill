@@ -9,18 +9,18 @@
 
 extern int main();
 
-extern unsigned _estack; // this comes from stm32f103c8.ld
-
+extern unsigned _estack;   // this comes from stm32f103c8.ld
 volatile unsigned tickcnt; // SysTick counter available to main()
 
 /*
  _init() - initialize board
 
- We setup the SysTick clock to be 1 msec ticks
+ Setup the SysTick clock for 1 msec ticks
 
 */
+
 void _init() {
-  tickcnt=0; // as we aren't zeroing bss we do this
+  tickcnt=0; // as we aren't zeroing bss, we do this
 
   SysTick_Config(F_CPU/1000);
 }
