@@ -1,18 +1,22 @@
-// vim: set expandtab ts=2 sw=2:
+/*
+  vim: set expandtab ts=2 sw=2:
 
-// start.c - the reset exception handler
+  vectors.c - the exception/isr handler code and the vector table (VTOR)
+
+*/
 
 #include <stm32f103xb.h>
 
-typedef void (* const vector)(void);
-
-extern unsigned _estack; // this comes from stm32f103c8.ld
 extern int main();
 
-volatile unsigned tickcnt;
+extern unsigned _estack; // this comes from stm32f103c8.ld
+
+volatile unsigned tickcnt; // SysTick counter available to main()
 
 /*
- _init() - normally we would setup the MCLK
+ _init() - initialize board
+
+ We setup the SysTick clock to be 1 msec ticks
 
 */
 void _init() {
@@ -26,8 +30,10 @@ void Reset_Handler(void);
 
 /*
  Reset_Handler() - the reset exception handler
- sets stack and optionally inits .bss and .data
- then calls main
+
+ Sets stack pointer and optionally inits .bss and .data
+ then calls main.
+
  */
 
 void Reset_Handler(void) {
@@ -66,22 +72,39 @@ void Reset_Handler(void) {
 
 
 /*
- SysTick_Handler() - SYSTICK exception handler.
+  SysTick_Handler() - SYSTICK exception handler.
 
- */
+  Increment a tick counter each time we get an interrupt
+  from the SYSTICK.
+
+  */
 
 void SysTick_Handler(void) {
   ++tickcnt;
 }
 
 /*
- excpt_handler/vector table
- */
+  VTOR vector table - must begin at 0x08000000
+  
+  We just fill in the ones we are using
+
+  [0] = initial stack address (grows down)
+  [1] = reset exception handler address
+  ..
+  [15] = systick exception handler address
+  [16] = first peripheral ISR handler address
+  ...
+  [..] = last .. we aren't using the peripheral ISRs yet
+        so we don't even declare them
+
+  */
+
+typedef void (* const vector)(void); // const pointer to function(void) return void
 
 __attribute((used, section(".isr_vectors")))
-static const vector excp_handlers[1+15] = 
+static const vector vectors[1+15] = 
 {
-  (void *)&_estack,
+  (void * const )&_estack,
   [1]=Reset_Handler,
   [15]=SysTick_Handler
 };
