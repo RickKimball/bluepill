@@ -40,17 +40,21 @@ LSS := $(TARGET).lss
 SYM := $(TARGET).sym
 
 ASFLAGS = -Wall -g $(CPUFLAGS) $(INCLUDE_DIRS) -x assembler
+
+# see https://launchpadlibrarian.net/287100883/readme.txt
+NANO_FLAGS=--specs=nano.specs --specs=nosys.specs
+
 CFLAGS += -Wall -g $(OPTIMIZE) $(CPUFLAGS) -std=$(STD)
 CFLAGS += -DF_CPU=$(F_CPU)
-CFLAGS += -fwrapv
+CFLAGS += $(NANO_FLAGS)
+CFLAGS += -ffunction-sections -fwrapv
 CFLAGS += -fsingle-precision-constant -Wdouble-promotion
-CFLAGS += -ffunction-sections
 CFLAGS += $(INCLUDE_DIRS)
 
 LDSCRIPT = -T stm32f103c8.ld
 LDFLAGS += -Wl,--gc-section
 LDFLAGS += $(LDSCRIPT)
-LDFLAGS += -nostartfiles --specs=nano.specs --specs=nosys.specs
+LDFLAGS += -nostartfiles $(NANO_FLAGS)
 
 OPENOCD_ARGS = -f interface/stlink.cfg 
 OPENOCD_ARGS += -c 'transport select hla_swd'

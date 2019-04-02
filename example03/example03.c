@@ -19,27 +19,28 @@
 #include <stm32f103xb.h>
 #include <common.h>
 
+static void delay(unsigned msec) {
+  const unsigned t0 = tickcnt;
+
+  while( (tickcnt-t0) < msec) { __WFE(); }
+
+  return;
+}
+
 int main() {
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 
   // PC13 set to opendrain
   GPIOC->CRH = (GPIOC->CRH & ~(0b1111<<20)) | (0b0001<<20);
 
-  unsigned delay_until_tickcnt=tickcnt+100;
-
   while(1) {
     // turn on - pull to gnd
     GPIOC->ODR &= ~(1<<13);
-
-    delay_until_tickcnt += 50;
-    while( tickcnt < delay_until_tickcnt) { __WFE(); }
+    delay(100);
     
     // turn off - let it float
     GPIOC->ODR |= 1 << 13;
-
-    delay_until_tickcnt += 450;
-    while( tickcnt < delay_until_tickcnt) { __WFE(); }
-    
+    delay(400);
   }
   return 0;
 }
