@@ -141,7 +141,6 @@ kill:
 openocd: $(HEX)
 	openocd $(OPENOCD_ARGS) & xterm -e telnet localhost 4444
 
-
 size: $(ELF)
 	@echo "done!"
 	$(OBJSIZE) $(ELF)
@@ -165,10 +164,6 @@ ram:
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(DEPS)
-endif
-
-ifdef VERBOSE
-V ?= 1
 endif
 
 $(V).SILENT:
