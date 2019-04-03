@@ -9,7 +9,7 @@
 	.global delay
         .type delay,%function
 delay:
-	mov     r12,#1322 
+	mov     r12,#1600 		@ F_CPU/5  (1/1000)/(1/8000000)
 	mul     r0, r12 
 0:
         adds    r0, r0, #-1
