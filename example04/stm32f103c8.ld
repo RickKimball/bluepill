@@ -90,7 +90,6 @@ SECTIONS
     KEEP (*(SORT(.fini_array.*)))
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
-    . = ALIGN(16);
   } >FLASH
 
   /* Initialized data sections goes into RAM, load LMA copy after code */
@@ -101,7 +100,6 @@ SECTIONS
     _sdata = .;               /* create a global symbol at data start */
     *(.data)                  /* .data sections */
     *(.data*)                 /* .data* sections */
-
     . = ALIGN(4);
     _edata = .;               /* define a global symbol at data end */
     _data_len = _edata - _sdata; 
@@ -111,12 +109,12 @@ SECTIONS
   .bss :
   {
     /* This is used by the startup in order to initialize the .bss secion */
+    . = ALIGN(4);
     _sbss = .;         /* define a global symbol at bss start */
     __bss_start__ = _sbss;
     *(.bss)
     *(.bss*)
     *(COMMON)
-
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;

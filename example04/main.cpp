@@ -25,7 +25,7 @@ extern "C" void _init(void) {
   // PC13 set to opendrain
   GPIOC->CRH = (GPIOC->CRH & ~(0b1111<<20)) | (0b0001<<20);
 
-  tickcnt=0xffffffff-1000;     // initialize to rollover in a 1sec to
+  tickcnt=-1000;               // initialize to rollover in a 1sec to
   SysTick_Config(F_CPU/1000U); // make sure our delays work properly
 }
 
