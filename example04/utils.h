@@ -7,8 +7,7 @@
 extern volatile unsigned tickcnt;
 
 /* systick delay_ms */
-[[gnu::always_inline]] 
-inline void delay_ms(unsigned msecs) {
+void delay_ms(unsigned msecs) {
   const unsigned t0=tickcnt;
 
   while( (tickcnt-t0) < msecs) { __WFE(); }
@@ -16,7 +15,7 @@ inline void delay_ms(unsigned msecs) {
   return;
 } 
 
-/* cycle count delay from delay.s */
+/* cycle count delay from delay.S */
 #ifdef __cplusplus
 extern "C" void delay(unsigned msec);
 #else

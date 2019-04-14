@@ -7,47 +7,53 @@
 # them and letting the default transforms happen. We just
 # need to fill in the values.
 #
-# NOTE: Executed commands are silent by default. To see verbose
-#        command output and its args run:
-#
-#  $ make V=1 all
-#
 
-#--- override from the commandline make ---
-COM_EXTRA    ?= -UNO_BSS_INIT -UNO_DATA_INIT
-CPUFLAGS     ?= -mcpu=cortex-m3 -mthumb
-DEBUGF       ?= -g
-F_CPU        ?= 8000000
-INCLUDES     ?= -I ../cmsis -I ../include
-LDFILE       ?= stm32f103c8.ld
-LDSCRIPT     ?= -T $(LDFILE)
-LINKER_GCC   ?= arm-none-eabi-g++
-OPTIMIZE     ?= -Os
-STDCC        ?= gnu11
-STDCXX       ?= gnu++14
-TARGET       ?= main
-VECT_ADDR    ?= 0x08000000
+# NOTE: Executed commands are silent by default.
+#       To see verbose compile command output run:
+#  $ make V=1 all
+
+#--- override these from the make commandline ---
+CC_DIR        ?=
+CROSS_COMPILE ?= $(CC_DIR)arm-none-eabi-
+DEBUGSYM_FLAG ?= -g
+F_CPU         ?= 8000000
+INCLUDES      ?= ../cmsis ../include
+LDFILE        ?= stm32f103c8.ld
+LDSCRIPT      ?= -T $(LDFILE)
+LINKER_GCC    ?= $(CROSS_COMPILE)g++
+OPTIMIZE      ?= -Os
+STDCC         ?= gnu11
+STDCXX        ?= gnu++14
+TARGET        ?= main
+TARGET_ARCH   ?= -mcpu=cortex-m3 -mthumb
+TARGET_MACH   ?= $(TARGET_ARCH)
+USER_CPPFLAGS ?= -U NO_DATA_INIT -U NO_BSS_INIT
+VECT_ADDR     ?= 0x08000000
 
 #--- assumes the compiler can be found in $PATH  ----------------------
-AS=arm-none-eabi-gcc
-CC=arm-none-eabi-gcc
-CXX=arm-none-eabi-g++
-OBJCOPY=arm-none-eabi-objcopy
-OBJDUMP=arm-none-eabi-objdump
-OBJNM=arm-none-eabi-nm
-OBJREADELF=arm-none-eabi-readelf
-OBJSIZE=arm-none-eabi-size
-LINK.cc=$(CXX)
+AS         := $(CROSS_COMPILE)gcc -c -x assembler
+CC         := $(CROSS_COMPILE)gcc
+CXX        := $(CROSS_COMPILE)g++
+LD         := $(CROSS_COMPILE)ld
+AR         := $(CROSS_COMPILE)ar
+OBJCOPY    := $(CROSS_COMPILE)objcopy
+OBJDUMP    := $(CROSS_COMPILE)objdump
+OBJNM      := $(CROSS_COMPILE)nm
+OBJREADELF := $(CROSS_COMPILE)readelf
+OBJSIZE    := $(CROSS_COMPILE)size
+LINK.cc    := $(CXX)
 
 #--- gather the files to compile --------------------------------------
-SRCS  = $(filter %.c %.cpp %.s %.S, $(wildcard *.*))
-OBJ0 = $(SRCS:.c=.o)
-OBJ1 = $(SRCS:.cpp=.o)
-OBJ2 = $(SRCS:.s=.o)
-OBJ3 = $(SRCS:.S=.o)
-OBJX = $(OBJ0) $(OBJ1) $(OBJ2) $(OBJ3)
-OBJS  = $(filter %.o, $(OBJX))
-DEPS  = $(OBJS:.o=.d)
+SRCS := $(filter %.c %.cpp %.s %.S, $(wildcard *.*))
+OBJ0 := $(SRCS:.c=.o)
+OBJ1 := $(SRCS:.cpp=.o)
+OBJ2 := $(SRCS:.s=.o)
+OBJ3 := $(SRCS:.S=.o)
+OBJX := $(OBJ0) $(OBJ1) $(OBJ2) $(OBJ3)
+OBJS := $(filter %.o, $(OBJX))
+DEPS := $(OBJS:.o=.d)
+INCS := $(addprefix -I,$(INCLUDES))
+#INCS := $(foreach d, $(INCLUDES), -I"$d")
 
 BIN := $(TARGET).bin
 ELF := $(TARGET).elf
@@ -56,28 +62,28 @@ LSS := $(TARGET).lss
 MAP := $(TARGET).map
 SYM := $(TARGET).sym
 
-ASFLAGS = -c -Wall -g $(CPUFLAGS) $(INCLUDES) -DF_CPU=$(F_CPU) -x assembler-with-cpp
+# add nano flags to compiler too, see: 
+#  https://launchpadlibrarian.net/287100883/readme.txt
+NANO_FLAGS=--specs=nano.specs --specs=nosys.specs
 
-COM_FLAGS += -Wall $(DEBUGF) $(OPTIMIZE) $(CPUFLAGS)
-COM_FLAGS += -DF_CPU=$(F_CPU) -DVECT_ADDR=$(VECT_ADDR)
-COM_FLAGS += -ffunction-sections -fwrapv
-COM_FLAGS += -fsingle-precision-constant -Wdouble-promotion
-COM_FLAGS += $(INCLUDES)
-COM_FLAGS += $(COM_EXTRA)
+COMMON_FLAGS += $(NANO_FLAGS)
+COMMON_FLAGS += -Wall $(DEBUGSYM_FLAG) $(OPTIMIZE) $(TARGET_ARCH)
+COMMON_FLAGS += -fwrapv -ffunction-sections
+COMMON_FLAGS += -fsingle-precision-constant -Wdouble-promotion
+COMMON_FLAGS += -fno-asynchronous-unwind-tables -fomit-frame-pointer
+ 
+CPPFLAGS += -DF_CPU=$(F_CPU) -DVECT_ADDR=$(VECT_ADDR)
+CPPFLAGS += $(INCS)
+CPPFLAGS += $(USER_CPPFLAGS)
 
-CFLAGS = -std=$(STDCC) $(COM_FLAGS)
-
-CXXFLAGS  = -std=$(STDCXX) $(COM_FLAGS)
+ASFLAGS   = -Wall $(DEBUGSYM_FLAG) 
+ 
+CFLAGS    = -std=$(STDCC) $(COMMON_FLAGS)
+CXXFLAGS  = -std=$(STDCXX) $(COMMON_FLAGS)
 CXXFLAGS += -fno-rtti -fno-exceptions
 CXXFLAGS += -fno-threadsafe-statics -fno-use-cxa-atexit -felide-constructors
 
-# add nano flags to compiler too, see: 
-#  https://launchpadlibrarian.net/287100883/readme.txt
-
-NANO_FLAGS=--specs=nano.specs --specs=nosys.specs
-CFLAGS += $(NANO_FLAGS)
-
-LDFLAGS += $(CPUFLAGS) -Wl,--gc-section -Wl,-Map=$(MAP)
+LDFLAGS  = $(TARGET_ARCH) -Wl,--gc-section -Wl,-Map=$(MAP)
 LDFLAGS += $(LDSCRIPT)
 LDFLAGS += -nostartfiles $(NANO_FLAGS)
 
@@ -109,18 +115,22 @@ $(LSS): $(ELF)
 	$(OBJNM) -n -S $< > $(SYM)
 
 #--- PHONY goals -------------------------------------------------------
-.PHONY: ALL clean erase debug install kill openocd ram size
+.PHONY: ALL clean clobber erase debug install kill listing openocd ram size version
 
-ALL: $(OBJS) $(ELF) $(BIN) $(HEX) $(LSS) size
+ALL: $(OBJS) $(ELF) $(BIN) $(HEX) listing
 
-clean:
-	@echo "cleaning generated files"
-	rm -f $(ELF) $(BIN) $(HEX) $(LSS) $(MAP) $(SYM) $(OBJS) $(DEPS)
+clean: clobber
+	@echo "cleaning generated listing files"
+	rm -f $(LSS) $(MAP) $(SYM)
+
+clobber:
+	@echo "cleaning generated executable files"
+	rm -f $(DEPS) $(OBJS) $(ELF) $(BIN) $(HEX) 
 
 debug:
 	printf "define exit\nmon reset run\nmon shutdown\nquit\nend\n" > /tmp/usercmds
 	openocd $(OPENOCD_ARGS) & \
-         xterm -e arm-none-eabi-gdb -ex "target remote :3333" -x /tmp/usercmds -ex 'layout split' $(ELF)
+         xterm -e $(CROSS_COMPILE)gdb -ex "target remote :3333" -x /tmp/usercmds -ex 'layout split' $(ELF)
 
 erase: $(HEX)
 	openocd $(OPENOCD_ARGS) \
@@ -138,12 +148,17 @@ endif
 kill:
 	killall openocd
 
+listing: $(LSS) size
+
 openocd: $(HEX)
 	openocd $(OPENOCD_ARGS) & xterm -e telnet localhost 4444
 
 size: $(ELF)
 	@echo "done!"
 	$(OBJSIZE) $(ELF)
+
+version:
+	( $(CC) --version && ( $(CC) $(CFLAGS) $(CPPFLAGS) -dM -E - < /dev/null | sort )) | less
 
 #----------------------------------------------------------------------
 # build and install into RAM only
@@ -156,14 +171,16 @@ ram:
 
 %.d: %.c Makefile
 	@echo "recreating depend file $@"
-	$(CC) $(CFLAGS) -MM -MT"$@ $(@:.d=.o)" -MF $@ $<
+	$(CC) $(CFLAGS) $(CPPFLAGS) -MM -MT"$@ $(@:.d=.o)" -MF $@ $<
 
 %.d: %.cpp Makefile
 	@echo "recreating depend file $@"
-	$(CXX) $(CXXFLAGS) -MM -MT"$@ $(@:.d=.o)" -MF $@ $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -MM -MT"$@ $(@:.d=.o)" -MF $@ $<
 
 ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),clobber)
 -include $(DEPS)
+endif
 endif
 
 $(V).SILENT:
