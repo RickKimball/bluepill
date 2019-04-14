@@ -8,10 +8,6 @@
 typedef void (* const vector)(void); /* const pointer to function(void) return void */
 #define BootRAM 0xF108F85F
 
-extern void vPortSVCHandler( void ) __attribute__ (( naked ));
-extern void xPortPendSVHandler( void ) __attribute__ (( naked ));
-extern void xPortSysTickHandler( void );
-
 /*---------------------------------------------------------------------
   VTOR vector table - must begin at 0x08000000 || 0x20000000
   

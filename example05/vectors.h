@@ -14,9 +14,12 @@ extern unsigned __bss_start__, __bss_end__;
 extern unsigned _sidata, _sdata, _edata;
 
 /* make sure these all have C signatures */
-void __libc_init_array(void);
-__attribute__((used, naked)) void Reset_Handler(void);
-void SysTick_Handler(void);
+extern void __libc_init_array(void);
+extern void Reset_Handler(void) __attribute__((used, naked));
+extern void vPortSVCHandler( void ) __attribute__ (( naked ));
+extern void xPortPendSVHandler( void ) __attribute__ (( naked ));
+extern void xPortSysTickHandler( void );
+
 
 #ifdef __cplusplus
 }
