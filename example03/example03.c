@@ -19,6 +19,8 @@
 #include <stm32f103xb.h>
 #include <common.h>
 
+extern volatile unsigned tickcnt;
+
 static void delay(unsigned msec) {
   const unsigned t0 = tickcnt;
 
@@ -30,8 +32,8 @@ static void delay(unsigned msec) {
 int main() {
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 
-  // PC13 set to opendrain
-  GPIOC->CRH = (GPIOC->CRH & ~(0b1111<<20)) | (0b0001<<20);
+  // PC13 set to opendrain / 2MHz max
+  GPIOC->CRH = (GPIOC->CRH & ~(0b1111<<20)) | (0b0110<<20);
 
   while(1) {
     // turn on - pull to gnd

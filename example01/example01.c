@@ -20,8 +20,8 @@ const vector isr_handlers[1+14] =
 int main(){
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 
-  // make PC13 opendrain
-  GPIOC->CRH = (GPIOC->CRH & ~(0b1111 << 20)) | 0b1 << 20;
+  // make PC13 opendrain / 2MHz max
+  GPIOC->CRH = (GPIOC->CRH & ~(0b1111 << 20)) | 0b0110 << 20;
 
   while(1){
     GPIOC->ODR &= ~(1<<13); // on pulled to gnd

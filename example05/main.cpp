@@ -27,9 +27,9 @@ extern "C" void _init(void) {
   // turn on GPIOC clock
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 
-  // PC13 and PC14 set to opendrain
+  // PC13 and PC14 set to opendrain / 2MHz max
   GPIOC->CRH = (GPIOC->CRH & ~(0b1111<<20 | 0b1111<<24)) |
-               (0b0001<<20 | 0b0001<<24);
+               (0b0110<<20 | 0b0110<<24);
 }
 
 /*---------------------------------------------------------------------

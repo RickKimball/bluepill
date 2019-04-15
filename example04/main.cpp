@@ -22,8 +22,8 @@ extern "C" void _init(void) {
   // turn on GPIOC clock
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 
-  // PC13 set to opendrain
-  GPIOC->CRH = (GPIOC->CRH & ~(0b1111<<20)) | (0b0001<<20);
+  // PC13 set to opendrain / 2MHz max
+  GPIOC->CRH = (GPIOC->CRH & ~(0b1111<<20)) | (0b0110<<20);
 
   tickcnt=-1000;               // initialize to rollover in a 1sec to
   SysTick_Config(F_CPU/1000U); // make sure our delays work properly

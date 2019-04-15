@@ -31,7 +31,7 @@ USER_CPPFLAGS ?= -U NO_DATA_INIT -U NO_BSS_INIT
 VECT_ADDR     ?= 0x08000000
 
 #--- assumes the compiler can be found in $PATH  ----------------------
-AS         := $(CROSS_COMPILE)gcc -c -x assembler
+AS         := $(CROSS_COMPILE)gcc -c -x assembler-with-cpp
 CC         := $(CROSS_COMPILE)gcc
 CXX        := $(CROSS_COMPILE)g++
 LD         := $(CROSS_COMPILE)ld
