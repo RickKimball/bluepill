@@ -57,7 +57,8 @@ extern "C" void _init(void) {
   RCC->APB2RSTR &= ~RCC_APB2RSTR_USART1RST_Msk;
   RCC->APB2ENR |= (RCC_APB2ENR_AFIOEN | RCC_APB2ENR_IOPAEN | RCC_APB2ENR_USART1EN);
 
-  GPIOA->CRH = (GPIOA->CRH & ~(0xff << 4)) | (0b01001011 << 4); // PA9-TX1, PA10-RX1
+  GPIOA->CRH = (GPIOA->CRH & ~(0b11111111 << (9-8)*4))
+                                     | (0b01001011 << (9-8)*4); // PA10-RX1, PA9-TX1
   USART1->BRR = ((F_CPU) / BAUD) / APB2_DIV;                    // BUS SPEED is MCLK/1
   USART1->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;     // enable TX, RX, USART
 
