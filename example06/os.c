@@ -19,7 +19,6 @@ int _write(int file, char *ptr, int len) {
   case 2:   /* stderr */
     for (int n=0; n < len; ++n) {
       while (!(USART1->SR & USART_SR_TXE)) {
-        //vTaskDelay(0);
         taskYIELD();
       }
       USART1->DR = (*ptr++ & (uint16_t)0xFF);
