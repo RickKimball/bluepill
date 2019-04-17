@@ -13,11 +13,11 @@
 #  $ make V=1 all
 
 #--- override these from the make commandline ---
-CC_DIR        ?=
-CROSS_COMPILE ?= $(CC_DIR)arm-none-eabi-
+GCC_PATH      ?=
+CROSS_COMPILE ?= $(GCC_PATH)arm-none-eabi-
 DEBUGSYM_FLAG ?= -g
 F_CPU         ?= 24000000
-INCLUDES      ?= . ../cmsis ../include FreeRTOS FreeRTOS/include
+INCLUDES      ?= . ../cmsis ../include FreeRTOS FreeRTOS/include FreeRTOS/portable/GCC/ARM_CM3
 LDFILE        ?= stm32f103c8.ld
 LDSCRIPT      ?= -T $(LDFILE)
 LINKER_GCC    ?= $(CROSS_COMPILE)g++
@@ -46,6 +46,8 @@ LINK.cc    := $(CXX)
 #--- gather the files to compile --------------------------------------
 SRCS  = $(filter %.c %.cpp %.s %.S, $(wildcard *.*))
 SRCS += $(filter %.c %.cpp %.s %.S, $(wildcard FreeRTOS/*.*))
+SRCS += FreeRTOS/portable/GCC/ARM_CM3/port.c
+SRCS += FreeRTOS/portable/MemMang/heap_3.c
 OBJ0 := $(SRCS:.c=.o)
 OBJ1 := $(SRCS:.cpp=.o)
 OBJ2 := $(SRCS:.s=.o)
