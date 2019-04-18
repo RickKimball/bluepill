@@ -13,14 +13,14 @@
 #  $ make V=1 all
 
 #--- override these from the make commandline ---
-GCC_PATH      ?=
-CROSS_COMPILE ?= $(GCC_PATH)arm-none-eabi-
+GCC_PATH      ?=              # you need to supply trailing '/' so ... '/usr/bin/'
+PREFIX        ?= arm-none-eabi-
 DEBUGSYM_FLAG ?= -g
 F_CPU         ?= 24000000
 INCLUDES      ?= . ../cmsis ../include FreeRTOS FreeRTOS/include FreeRTOS/portable/GCC/ARM_CM3
 LDFILE        ?= stm32f103c8.ld
 LDSCRIPT      ?= -T $(LDFILE)
-LINKER_GCC    ?= $(CROSS_COMPILE)g++
+LINKER_GCC    ?= $(PREFIX)g++
 OPTIMIZE      ?= -Os
 STDCC         ?= gnu11
 STDCXX        ?= gnu++14
@@ -31,16 +31,16 @@ USER_CPPFLAGS ?= -U NO_DATA_INIT -U NO_BSS_INIT
 VECT_ADDR     ?= 0x08000000
 
 #--- assumes the compiler can be found in $PATH  ----------------------
-AS         := $(CROSS_COMPILE)gcc -c -x assembler
-CC         := $(CROSS_COMPILE)gcc
-CXX        := $(CROSS_COMPILE)g++
-LD         := $(CROSS_COMPILE)ld
-AR         := $(CROSS_COMPILE)ar
-OBJCOPY    := $(CROSS_COMPILE)objcopy
-OBJDUMP    := $(CROSS_COMPILE)objdump
-OBJNM      := $(CROSS_COMPILE)nm
-OBJREADELF := $(CROSS_COMPILE)readelf
-OBJSIZE    := $(CROSS_COMPILE)size
+AS         	:= $(GCC_PATH)$(PREFIX)gcc -c -x assembler
+CC         := $(GCC_PATH)$(PREFIX)gcc
+CXX        := $(GCC_PATH)$(PREFIX)g++
+LD         := $(GCC_PATH)$(PREFIX)ld
+AR         := $(GCC_PATH)$(PREFIX)ar
+OBJCOPY    := $(GCC_PATH)$(PREFIX)objcopy
+OBJDUMP    := $(GCC_PATH)$(PREFIX)objdump
+OBJNM      := $(GCC_PATH)$(PREFIX)nm
+OBJREADELF := $(GCC_PATH)$(PREFIX)readelf
+OBJSIZE    := $(GCC_PATH)$(PREFIX)size
 LINK.cc    := $(CXX)
 
 #--- gather the files to compile --------------------------------------
@@ -137,7 +137,7 @@ erase: $(HEX)
 
 debug:
 	printf "define exit\nmon reset run\nmon shutdown\nquit\nend\n" > /tmp/usercmds
-	xterm -e $(CROSS_COMPILE)gdb \
+	xterm -e $(GCC_PATH)$(PREFIX)gdb \
 		-ex "target remote | openocd -c 'gdb_port pipe; log_output openocd.log' $(OPENOCD_ARGS)" \
 		-x /tmp/usercmds \
 		-ex 'layout split' $(ELF)

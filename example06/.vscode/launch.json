@@ -11,14 +11,12 @@
             "target": "main.elf",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
-            "gdbpath" : "arm-none-eabi-gdb",
+            "gdbpath": "arm-none-eabi-gdb",
             "autorun": [
                 "target remote | openocd -c 'gdb_port pipe; log_output openocd.log' -f interface/stlink.cfg -c 'transport select hla_swd' -f target/stm32f1x.cfg",
                 "monitor reset init",
                 "tb Reset_Handler"
-                ]
-        
+            ]
         }
     ]
 }
-
