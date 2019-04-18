@@ -13,7 +13,7 @@
 #  $ make V=1 all
 
 #--- override these from the make commandline ---
-GCC_PATH      ?=              # you need to supply trailing '/' so ... '/usr/bin/'
+GCC_PATH      ?=                          # you need to supply trailing '/' so ... '/usr/bin/'
 PREFIX        ?= arm-none-eabi-
 DEBUGSYM_FLAG ?= -g
 F_CPU         ?= 24000000
@@ -31,7 +31,7 @@ USER_CPPFLAGS ?= -U NO_DATA_INIT -U NO_BSS_INIT
 VECT_ADDR     ?= 0x08000000
 
 #--- assumes the compiler can be found in $PATH  ----------------------
-AS         	:= $(GCC_PATH)$(PREFIX)gcc -c -x assembler
+AS         := $(GCC_PATH)$(PREFIX)gcc -c -x assembler
 CC         := $(GCC_PATH)$(PREFIX)gcc
 CXX        := $(GCC_PATH)$(PREFIX)g++
 LD         := $(GCC_PATH)$(PREFIX)ld
@@ -146,7 +146,7 @@ debug:
 install: $(HEX)
 ifeq ($(VECT_ADDR),0x20000000)
 	openocd $(OPENOCD_ARGS) \
-                -c 'init' -c 'halt' -c "load_image $(HEX)" -c 'reset' -c 'exit'
+		-c 'init' -c 'halt' -c "load_image $(HEX)" -c 'reset' -c 'exit'
 else
 	openocd $(OPENOCD_ARGS) -c "program $(HEX) verify reset exit"
 endif
