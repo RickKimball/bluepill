@@ -42,5 +42,4 @@ static const vector vector_table [ VTOR_MIN ] =
 #endif
 };
 
-/* vim: set expandtab ts=2 sw=2: */
-
+/* vim: set ts=2 sw=2 expandtab : */

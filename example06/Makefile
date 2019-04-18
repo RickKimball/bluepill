@@ -128,12 +128,16 @@ clean: clobber
 
 clobber:
 	@echo "cleaning generated executable files"
-	rm -f $(DEPS) $(OBJS) $(ELF) $(BIN) $(HEX) 
+	rm -f $(DEPS) $(OBJS) $(ELF) $(BIN) $(HEX) openocd.log
+	rm -rf .vscode/ipch
 
 debug:
 	printf "define exit\nmon reset run\nmon shutdown\nquit\nend\n" > /tmp/usercmds
-	openocd $(OPENOCD_ARGS) & \
-         xterm -e $(CROSS_COMPILE)gdb -ex "target remote :3333" -x /tmp/usercmds -ex 'layout split' $(ELF)
+	xterm -e $(CROSS_COMPILE)gdb \
+		-ex "target remote | openocd -c 'gdb_port pipe; log_output openocd.log' $(OPENOCD_ARGS)" \
+		-x /tmp/usercmds \
+		-ex 'layout split' $(ELF)
+	rm /tmp/usercmds
 
 erase: $(HEX)
 	openocd $(OPENOCD_ARGS) \

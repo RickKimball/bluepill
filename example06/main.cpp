@@ -34,11 +34,10 @@ static const uint32_t APB1_DIV = (F_CPU>36000000) ? 2 : 1;
 */
 
 extern "C" void _init(void) {
-  // turn on clocks
-  RCC->APB2ENR |= 0
-               | RCC_APB2ENR_AFIOEN                       /* Alternate IO */
-               | RCC_APB2ENR_IOPAEN | RCC_APB2ENR_IOPCEN  /* GPIOA/C */
-               | RCC_APB2ENR_USART1EN                     /* USART1 */
+  RCC->APB2ENR |= 0                                       /* turn on clocks */
+               | RCC_APB2ENR_AFIOEN                       /* Alternate IO   */
+               | RCC_APB2ENR_IOPAEN | RCC_APB2ENR_IOPCEN  /* GPIO A/C       */
+               | RCC_APB2ENR_USART1EN                     /* USART1         */
                ;
 
   /*---------------------------------------------------------------------- */
