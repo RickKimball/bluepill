@@ -101,7 +101,7 @@ all: $(OBJS) $(ELF) $(HEX) size
 
 $(ELF): $(OBJS)
 	@echo "generating $@"
-	$(LINKER_GCC) $(LDFLAGS) $^ -o $@ 
+	$(LINKER_GCC) $(LDFLAGS) $^ -o $@
 
 $(BIN): $(ELF)
 	$(OBJCOPY) -O binary $< $@
@@ -118,7 +118,7 @@ $(LSS): $(ELF)
 	$(OBJNM) -n -S $< > $(SYM)
 
 #--- PHONY goals -------------------------------------------------------
-.PHONY: ALL clean clobber erase debug install kill listing openocd ram size version
+.PHONY: ALL clean clobber erase debug install kill listing openocd putty ram size version
 
 ALL: $(OBJS) $(ELF) $(BIN) $(HEX) listing
 
@@ -131,6 +131,10 @@ clobber:
 	rm -f $(DEPS) $(OBJS) $(ELF) $(BIN) $(HEX) openocd.log
 	rm -rf .vscode/ipch
 
+erase: $(HEX)
+	openocd $(OPENOCD_ARGS) \
+             -c 'init' -c 'halt' -c 'stm32f1x mass_erase 0' -c 'reset'  -c 'shutdown'
+
 debug:
 	printf "define exit\nmon reset run\nmon shutdown\nquit\nend\n" > /tmp/usercmds
 	xterm -e $(CROSS_COMPILE)gdb \
@@ -138,10 +142,6 @@ debug:
 		-x /tmp/usercmds \
 		-ex 'layout split' $(ELF)
 	rm /tmp/usercmds
-
-erase: $(HEX)
-	openocd $(OPENOCD_ARGS) \
-             -c 'init' -c 'halt' -c 'stm32f1x mass_erase 0' -c 'reset'  -c 'shutdown'
 
 install: $(HEX)
 ifeq ($(VECT_ADDR),0x20000000)
@@ -160,12 +160,8 @@ listing: $(LSS) size
 openocd: $(HEX)
 	openocd $(OPENOCD_ARGS) & xterm -e telnet localhost 4444
 
-size: $(ELF)
-	@echo "done!"
-	$(OBJSIZE) $(ELF)
-
-version:
-	( $(CC) --version && ( $(CC) $(CFLAGS) $(CPPFLAGS) -dM -E - < /dev/null | sort )) | less
+putty:
+	putty /dev/ttyUSB0 -serial -sercfg 115200,8,n,1 &
 
 #----------------------------------------------------------------------
 # build and install into RAM only
@@ -173,6 +169,13 @@ version:
 # then run 'make erase' once to clear flash
 ram:
 	env LDFILE=ram.ld VECT_ADDR=0x20000000 make clean ALL install
+
+size: $(ELF)
+	@echo "done!"
+	$(OBJSIZE) $(ELF)
+
+version:
+	( $(CC) --version && ( $(CC) $(CFLAGS) $(CPPFLAGS) -dM -E - < /dev/null | sort )) | less
 
 ##--- augmented default rules, handle auto creation of depends files --
 
