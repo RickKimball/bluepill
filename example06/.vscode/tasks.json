@@ -15,15 +15,23 @@
                 "$gcc"
             ]
         },
-        {
+        ,{
+            "label": "install",
+            "type": "shell",
+            "command": "make install",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+        ,{
             "label": "clean",
             "type": "shell",
             "command": "make clean",
             "problemMatcher": [
                 "$gcc"
             ]
-        },
-        {
+        }
+        ,{
             "label": "rebuild",
             "type": "shell",
             "command": "make clean; make all",
