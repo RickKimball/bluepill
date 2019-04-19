@@ -16,7 +16,7 @@
 GCC_PATH      ?=                          # you need to supply trailing '/' so ... '/usr/bin/'
 PREFIX        ?= arm-none-eabi-
 DEBUGSYM_FLAG ?= -g
-F_CPU         ?= 24000000
+F_CPU         ?= 24000000L
 INCLUDES      ?= . ../cmsis ../include FreeRTOS FreeRTOS/include FreeRTOS/portable/GCC/ARM_CM3
 LDFILE        ?= stm32f103c8.ld
 LDSCRIPT      ?= -T $(LDFILE)
@@ -27,6 +27,7 @@ STDCXX        ?= gnu++14
 TARGET        ?= main
 TARGET_ARCH   ?= -mcpu=cortex-m3 -mthumb
 TARGET_MACH   ?= $(TARGET_ARCH)
+TTY           ?= /dev/ttyUSB0
 USER_CPPFLAGS ?= -U NO_DATA_INIT -U NO_BSS_INIT
 VECT_ADDR     ?= 0x08000000
 
@@ -115,7 +116,7 @@ $(LSS): $(ELF)
 	$(OBJDUMP) -CS $< >> $@
 	$(OBJREADELF) -x .rodata -x .data $< >> $@
 	$(OBJREADELF) -t $< >> $@
-	$(OBJNM) -n -S $< > $(SYM)
+	$(OBJNM) -n -C -S $< > $(SYM)
 
 #--- PHONY goals -------------------------------------------------------
 .PHONY: ALL clean clobber erase debug install kill listing openocd putty ram size version
@@ -136,12 +137,12 @@ erase: $(HEX)
              -c 'init' -c 'halt' -c 'stm32f1x mass_erase 0' -c 'reset'  -c 'shutdown'
 
 debug:
-	printf "define exit\nmon reset run\nmon shutdown\nquit\nend\n" > /tmp/usercmds
-	xterm -e $(GCC_PATH)$(PREFIX)gdb \
-		-ex "target remote | openocd -c 'gdb_port pipe; log_output openocd.log' $(OPENOCD_ARGS)" \
-		-x /tmp/usercmds \
-		-ex 'layout split' $(ELF)
-	rm /tmp/usercmds
+	xterm -geometry 95x62 -e $(GCC_PATH)$(PREFIX)gdb \
+		-ex "target remote \
+                    | openocd -c 'gdb_port pipe; log_output openocd.log' $(OPENOCD_ARGS)" \
+		-ex 'layout split' -ex 'winheight cmd 25' \
+		-ex 'mon reset halt' \
+		$(ELF)
 
 install: $(HEX)
 ifeq ($(VECT_ADDR),0x20000000)
@@ -161,7 +162,7 @@ openocd: $(HEX)
 	openocd $(OPENOCD_ARGS) & xterm -e telnet localhost 4444
 
 putty:
-	putty /dev/ttyUSB0 -serial -sercfg 115200,8,n,1 &
+	putty $(TTY) -serial -sercfg 115200,8,n,1 &
 
 #----------------------------------------------------------------------
 # build and install into RAM only
