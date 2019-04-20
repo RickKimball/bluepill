@@ -1,0 +1,4 @@
+This directory contains 3rd party code. It is licensed differently
+than the bluepill github project.
+
+See the license in each 3rd party project for any restrictions.

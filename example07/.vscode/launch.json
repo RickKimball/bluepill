@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+    "name": "(native-gdb)",
+    "type": "gdb",
+    "request": "launch",
+    "target": "main.elf",
+    "cwd": "${workspaceRoot}",
+    "linux" : {
+      "gdbpath": "arm-none-eabi-gdb",
+      "autorun": [
+        "target remote | openocd -c 'gdb_port pipe; log_output openocd.log' -f interface/stlink.cfg -c 'transport select hla_swd' -f target/stm32f1x.cfg",
+        "monitor reset init"
+        ]
+      }
+    }
+    ,{
+    // why this gdb is less than useful on linux (you can't pause):
+    //   https://github.com/Microsoft/vscode-cpptools/issues/807
+    "name": "(vscode-gdb)",
+    "type": "cppdbg",
+    "request": "launch",
+    "program": "${workspaceFolder}/main.elf",
+    "args": [],
+    "stopAtEntry": false,
+    "launchCompleteCommand" :"exec-continue",
+    "cwd": "${workspaceFolder}",
+    "environment": [],
+    "externalConsole": false,
+    "linux" : {
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/arm-none-eabi-gdb",
+      "setupCommands": [
+        { "text": "target remote |openocd -c 'gdb_port pipe; log_output openocd.log' -f interface/stlink.cfg -c \"transport select hla_swd\" -f target/stm32f1x.cfg" },
+        { "text": "mon reset init" }
+        ],
+      "filterStderr": true,
+      "filterStdout": false
+      }
+    }
+  ]
+}
+// vim: set ts=4 sw=2 expandtab :

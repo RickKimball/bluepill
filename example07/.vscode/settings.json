@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "errno.h": "c",
+        "times.h": "c",
+        "task.h": "c",
+        "unistd.h": "c",
+        "sysclock.h": "c++",
+        "vectors.h": "c",
+        "stat.h": "c",
+        "common.h": "c",
+        "stm32f103xb.h": "c",
+        "Scheduler.h": "c++",
+        "Arduino.h": "c++"
+    },
+    "C_Cpp.intelliSenseEngineFallback": "Disabled",
+}
