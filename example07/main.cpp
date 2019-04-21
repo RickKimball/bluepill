@@ -1,5 +1,6 @@
 /*---------------------------------------------------------------------
-  main.cpp - FreeRTOS USART1 example
+  main.cpp - example07 cooperative multi-tasking USART1/Blink sample
+
   Assumes a USB dongle connected to PA9 for 115200,8,n,1
 */
 #include <stm32f103xb.h>
@@ -20,6 +21,7 @@
 #define BAUD 115200
 
 /*---------------------------------------------------------------------
+ function signatures
  */
 extern "C" void _init(void);
 extern "C" int main(void);
@@ -27,10 +29,13 @@ static void delay(unsigned & tick_start, const unsigned msecs);
 static void blink_task();
 static void loop();
 
+/*---------------------------------------------------------------------
+  globals
+  */
 static const uint32_t APB2_DIV = 1;
 static const uint32_t APB1_DIV = (F_CPU>36000000) ? 2 : 1;
 
-volatile unsigned tickcnt;
+volatile unsigned tickcnt;            // SysTick_Handler msec counter
 
 /*---------------------------------------------------------------------
  Reset_Handler() - the reset exception handler
@@ -78,7 +83,24 @@ void Reset_Handler(void) {
   " bne.n 2b\n"         /* try again */
   );
 
-  /* _init() board, call any global c/c++ constructors */
+#if 0
+  /* pattern fill ram from _ebss to top of stack _estack w/(0xbaadf00d) */
+  /* optional, useful for gdb to detect which parts of memory are used  */
+  __asm__ volatile(
+  "color_ram_init:\n"
+  " ldr   r0, =end\n"     /* start address of heap in SRAM */
+  " ldr   r1, =_estack\n" /* top of stack in SRAM */
+  " mov   r2, #0xf00d\n"  /* pattern constant */
+  " movt  r2, #0xbaad\n"  /* 0xbaadf00d */
+  "2:\n"
+  " cmp   r0,r1\n"
+  " itt   ne\n"         /* exec following 2 instructions if r0 < r1 */
+  " strne r2,[r0],#4\n" /* post increment r0 after storing zero */
+  " bne.n 2b\n"         /* try again */
+  );
+#endif
+
+  /* _init() board, then call any global c/c++ constructors from newlib */
   __libc_init_array();
   
   main();
