@@ -25,7 +25,7 @@
  */
 extern "C" void _init(void);
 extern "C" int main(void);
-static void delay(unsigned & tick_start, const unsigned msecs);
+static void delay_until(unsigned & tick_start, const unsigned msecs);
 static void blink_task();
 static void loop();
 
@@ -133,9 +133,9 @@ void _init(void) {
 
   /*---------------------------------------------------------------------- */
   //  PA9/PA10 configured as USART1
-  RCC->APB2RSTR |= RCC_APB2RSTR_USART1RST_Msk;
-  RCC->APB2RSTR &= ~RCC_APB2RSTR_USART1RST_Msk;
-  RCC->APB2ENR |= (RCC_APB2ENR_AFIOEN | RCC_APB2ENR_IOPAEN | RCC_APB2ENR_USART1EN);
+  SET_BIT(RCC->APB2RSTR, RCC_APB2RSTR_USART1RST);
+  CLEAR_BIT(RCC->APB2RSTR, RCC_APB2RSTR_USART1RST);
+  SET_BIT(RCC->APB2ENR,RCC_APB2ENR_AFIOEN | RCC_APB2ENR_IOPAEN | RCC_APB2ENR_USART1EN);
 
   GPIOA->CRH = (GPIOA->CRH & ~(0b11111111 << (9-8)*4))
                                      | (0b01001011 << (9-8)*4); // PA10-RX1, PA9-TX1
@@ -173,16 +173,16 @@ int main(void) {
  blink_task() - toggle LED_BUILTIN on/off
  */
 void blink_task() {
-  static unsigned now=tickcnt;
+  static unsigned start_tick=tickcnt;
 
   while(1) {
     // turn on led - pull to gnd
     GPIOC->BSRR = (1<<13) << 16;
-    delay(now, 50);
+    delay_until(start_tick, 50);
 
     // turn off led - let it float
     GPIOC->BSRR = (1<<13);
-    delay(now, 450);
+    delay_until(start_tick, 450);
   }
 }
 
@@ -191,24 +191,24 @@ void blink_task() {
  */
 void loop() {
   static const unsigned print_delay_ms=500;
-  static unsigned now=tickcnt;
+  static unsigned start_tick=tickcnt;
 
   while(1) {
 #if 0 /* minimal code size to illustrate multi tasking */
     write(1,".",1);
 #else
-    iprintf("tickcnt=%d\n",now);
+    iprintf("tickcnt=%d\n",start_tick);
 #endif
-    delay(now, print_delay_ms); // wait, then update now
+    delay_until(start_tick, print_delay_ms); // wait, then update start_tick
   }
 }
 
 /*---------------------------------------------------------------------
- delay(tick_start, msec) - delay for milliseconds
+ delay_until(tick_start, msec) - delay for milliseconds
 
  once delay is met, tick_start is updated for the caller.
  */
-void delay(unsigned & tick_start, const unsigned msecs) {
+void delay_until(unsigned & tick_start, const unsigned msecs) {
   while( (tickcnt-tick_start) < msecs) {
     yield();
   }
