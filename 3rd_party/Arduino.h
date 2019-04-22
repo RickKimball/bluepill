@@ -10,5 +10,9 @@
 #include <malloc.h>
 
 #if __cplusplus
-extern "C" void yield(void);
+extern "C" {
+#endif
+void yield(void);
+#if __cplusplus
+}
 #endif
