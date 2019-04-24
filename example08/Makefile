@@ -81,6 +81,8 @@ LDFLAGS = -mcpu=cortex-m3 -mthumb  -Wl,--gc-section \
  -Wl,-Map=$(MAP) \
  -T $(LDFILE) -nostartfiles --specs=nano.specs --specs=nosys.specs
 
+ RE2CFLAGS ?= -W
+
 TARGET_ARCH = -mcpu=cortex-m3 -mthumb
 
 #--------------------------------------------------------------------------------
@@ -141,6 +143,10 @@ $(LSS): $(ELF)
 	$(OBJREADELF) -x .rodata -x .data $< >> $@
 	$(OBJREADELF) -t $<                  >> $@
 	$(OBJNM) -n -C -S $<                  > $(SYM)
+
+%.cpp: %.re
+	@echo generating $@ from $<
+	re2c $(RE2CFLAGS) -o $@ $<
 
 #--------------------------------------------------------------------------------
 ALL: $(BIN) $(HEX) $(LSS) all
