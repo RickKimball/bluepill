@@ -22,16 +22,18 @@ loop:
         ws      = [ \t]+;
         dec     = [1-9][0-9]*;
         help    = 'help' | 'h' | '?';
+        uptime  = 'uptime';
 
-        end     { scanner->tok=END;     goto process_exit; }
-        *       { scanner->tok=yych;    goto process_exit; }
-        ws      { scanner->stok=s;      goto loop;         }
-        dec     { scanner->tok=DEC;     goto process_exit; }
-        help    { scanner->tok=HELP;    goto process_exit; }
-        'led'   { scanner->tok=LED;     goto process_exit; }
-        'blink' { scanner->tok=BLINK;   goto process_exit; }
-        'off'   { scanner->tok=OFF;     goto process_exit; }
-        'on'    { scanner->tok=ON;      goto process_exit; }
+        end      { scanner->tok=END;     goto process_exit; }
+        *        { scanner->tok=yych;    goto process_exit; }
+        ws       { scanner->stok=s;      goto loop;         }
+        dec      { scanner->tok=DEC;     goto process_exit; }
+        help     { scanner->tok=HELP;    goto process_exit; }
+        'led'    { scanner->tok=LED;     goto process_exit; }
+        'blink'  { scanner->tok=BLINK;   goto process_exit; }
+        'uptime' { scanner->tok=UPTIME;  goto process_exit; }
+        'off'    { scanner->tok=OFF;     goto process_exit; }
+        'on'     { scanner->tok=ON;      goto process_exit; }
     */
 
 process_exit:

@@ -21,6 +21,7 @@ STDCXX      ?= gnu++17
 TARGET      ?= firmware
 TTY         ?= /dev/ttyUSB0
 VECT_ADDR   ?= 0x08000000
+YYMAXFILE   ?= 3
 
 #--------------------------------------------------------------------------------
 AS_SRC     = \
@@ -30,7 +31,7 @@ C_SRC      = \
  	$(filter %.c, $(wildcard *.*))
 
 CXX_SRC    = \
- 	$(filter %.cpp, $(wildcard *.*)) \
+ 	$(filter %.cpp, process.cpp $(filter-out process.cpp, $(wildcard *.*))) \
  	$(filter %.cpp, $(wildcard ../3rd_party/Scheduler/src/*.*))
 
 INCLUDES   = \
@@ -81,7 +82,7 @@ LDFLAGS = -mcpu=cortex-m3 -mthumb  -Wl,--gc-section \
  -Wl,-Map=$(MAP) \
  -T $(LDFILE) -nostartfiles --specs=nano.specs --specs=nosys.specs
 
- RE2CFLAGS ?= -W
+ RE2CFLAGS ?= -W --no-generation-date
 
 TARGET_ARCH = -mcpu=cortex-m3 -mthumb
 
@@ -144,9 +145,11 @@ $(LSS): $(ELF)
 	$(OBJREADELF) -t $<                  >> $@
 	$(OBJNM) -n -C -S $<                  > $(SYM)
 
-%.cpp: %.re
+%.cpp: %.re process.h
 	@echo generating $@ from $<
 	re2c $(RE2CFLAGS) -o $@ $<
+	@echo "#pragma once"        > process_defines.h
+	grep YYMAXFILL process.cpp >> process_defines.h
 
 #--------------------------------------------------------------------------------
 ALL: $(BIN) $(HEX) $(LSS) all
@@ -158,7 +161,7 @@ clean:
 			$(OPENOCD_LOG) $(DEPS)
 
 clobber:
-	rm -rf $(BLD_DIR) .vscode/ipch
+	rm -rf $(BLD_DIR) .vscode/ipch process.cpp
 
 erase:
 	openocd $(OPENOCD_ARGS) \
