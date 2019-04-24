@@ -13,6 +13,7 @@ Help:
   led blink                - led blink on 500 msec, off for 500 msec
   led blink msec           - led blink on for msec and then off for msec
   led blink ontime,offtime - on for ontime, off for offtime
+  uptime                   - display msecs since power on
 command> led
 led is Blinking on time is 100, off time is 900
 command> led off
