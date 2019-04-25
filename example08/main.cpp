@@ -55,14 +55,14 @@ volatile unsigned tickcnt;            // SysTick_Handler msec counter
 volatile led_states led_state=LED_BLINK_STATE;
 volatile unsigned on_time=100, off_time=900; 
 
-// buffers used to hold command line data
-static char input_buf[100-YYMAXFILL+1];
-static char *pbuf = input_buf;
-static char *pbufend = &input_buf[sizeof(input_buf)];
-
 // command line task globals
 #define BACKSPACE 127 /* DEL key */
-static const char * const prompt = "command> ";
+static const char prompt[] = { "command> "};
+
+// buffers used to hold command line data
+static char input_buf[79+YYMAXFILL+1];
+static char *pbuf = input_buf;
+static char *pbufend = &input_buf[sizeof(input_buf)-YYMAXFILL-sizeof(prompt)];
 
 /*---------------------------------------------------------------------
  Reset_Handler() - the reset exception handler
@@ -263,8 +263,8 @@ void task0() {
       add_command_ch(c);
       if ( c == 0x0d) {
         command_handler();
-        pbuf = input_buf; // reset input buffer pointer to start
         fprintf(stdout,prompt); fflush(stdout);
+        pbuf = input_buf; // reset input buffer pointer to start
       }
     }
   }
@@ -297,12 +297,12 @@ void add_command_ch(int c) {
       break;
 
     // don't output the unmatchables
-    case 0xff:
+    case 0x00:
       *pbuf++ = c;
       break;
 
     default:
-      if ( pbuf < pbufend ) {
+      if ( pbuf < pbufend && c > 31 && c < 127 ) {
         *pbuf++ = c;
         write(1,&c,1);
       }
@@ -316,30 +316,22 @@ void add_command_ch(int c) {
  */
 void command_handler() {
   // fill end of buffer with unmatchable characters
-  for (int x = YYMAXFILL - 1; x; --x) add_command_ch(0xff);
+  for (int x = YYMAXFILL - 1; x; --x) add_command_ch(0x0);
 
-  process_t process_scanner = {pbuf=input_buf, input_buf};
+  process_t process_scanner = {input_buf, 0, 0, 0, 0};
   process_t * scanner = &process_scanner;
 
   while (1) {
-    process(scanner);
-    // scanner->print("next token: led | help : ");
-    switch (scanner->tok) {
-      case END:
-        return;
-
+    process(scanner, SCANNER_DEBUG_MSG("led|help|uptime|'\\r'"));
+    switch (scanner->token_id) {
       case LED:
-        scanner->stok = scanner->cursor;
-        process(scanner);
-        // scanner->print("next token: on| off | blink :");
-        switch (scanner->tok) {
+        process(scanner, SCANNER_DEBUG_MSG("on|off|blink|'\\r'"));
+        switch (scanner->token_id) {
           case ON:
-            // printf("found led on\n");
             update_blink_settings(LED_ON_STATE);
             return;
 
           case OFF:
-            // printf("found led off\n");
             update_blink_settings(LED_OFF_STATE);
             return;
 
@@ -347,22 +339,16 @@ void command_handler() {
             {
             int on=500, off=500;
             
-            scanner->stok = scanner->cursor;
-            process(scanner);
-            switch (scanner->tok) {
+            process(scanner,SCANNER_DEBUG_MSG("DEC|'\\r'"));
+            switch (scanner->token_id) {
               case DEC:
                 on = off = scanner->value;
-                scanner->stok = scanner->cursor;
-                process(scanner);
-                // scanner->print("next token: ',' | END :");
-                switch (scanner->tok) {
+                process(scanner,SCANNER_DEBUG_MSG("','|'\\r'"));
+                switch (scanner->token_id) {
                   case ',':
-                    scanner->stok = scanner->cursor;
-                    process(scanner);
-                    // scanner->print("next token: number :");
-                    switch (scanner->tok) {
+                    process(scanner,SCANNER_DEBUG_MSG("DEC|'\\r'"));
+                    switch (scanner->token_id) {
                       case DEC:
-                        // printf("found led blink %d,%d\n", on, scanner->value);
                         update_blink_settings(on, scanner->value);
                         return;
 
@@ -374,13 +360,11 @@ void command_handler() {
 
                   case END:
                   default:
-                    // printf("found led blink %d\n", on);
                     update_blink_settings(on, on);
                     return;
                 } // end LED BLINK DEC
  
               case END:
-                // printf("found led blink\n");
                 update_blink_settings();
                 return;
 
@@ -392,7 +376,6 @@ void command_handler() {
             break;
 
           case END:
-            // printf("found led\n");
             printf("led is %s",
                     (
                     led_state == LED_ON_STATE ? "On" :
@@ -427,11 +410,13 @@ void command_handler() {
         printf("up %d msecs\n", tickcnt);
         return;
 
+      case END:
+        return;
+
       default:
         printf("Error: invalid command\n");
         return;
     }
-    scanner->stok = scanner->cursor;  // start scan for next token
   }
 }
 

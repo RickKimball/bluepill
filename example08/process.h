@@ -21,25 +21,43 @@ enum process_token_t
     LAST
 };
 
+
+//#define SCANNER_DEBUG
+
+#ifdef SCANNER_DEBUG
+ #define SCANNER_DEBUG_MSG(s) (s)
+#else
+ #define SCANNER_DEBUG_MSG(s) 0
+#endif
+
 typedef struct {
-    const char *stok;       // pointer to first character of token string
-    const char *cursor;     // pointer to first character of next token to be parsed
-    int len;                // length of strok
-    int tok;                // enum token representation of string
-    int value;              // if numeric, contains the string converted to int
+    char *cursor;  // pointer to first character of next token_str to be parsed
+    char *token;   // pointer to first character of token string
+    int token_id;  // process_token_t representation of string
+    int len;       // length of strok
+    int value;     // if process_token_t::DEC, contains the string converted to int
 
     void print(const char *msg="") {
-        printf("%sscanner->tok=%d [%c], stok='%.*s' value=%d\n",
-            msg,
-            tok,
-            ((tok < 127) ? tok : '.'), (len),
-            stok, value);
+#ifdef SCANNER_DEBUG
+        printf("%stoken_id=%3d, len=%2d, value=%-5d, ", msg, token_id,len,value);
+        if ( token_id != END )
+            printf("token=\"%.*s\"\n", len, token);
+        else
+            printf("token=\"\\r\"\n");
+#endif
+    }
+
+    void print_cursor(const char *msg="") {
+#ifdef SCANNER_DEBUG
+        char *s=cursor, *p;
+        for (p=s; *p != '\r'; ++p);
+
+        printf("target:[%s] cursor=\"%.*s\\r\"\n", msg, p-s, s);
+#endif
     }
 
 } process_t;
 
-bool process(process_t *scanner);
+bool process(process_t *scanner, const char *msg=0);
 
 /* vim: set ts=4 sw=4 expandtab : */
-
-/* makefile replaces this with real value*/

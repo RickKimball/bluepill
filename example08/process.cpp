@@ -10,17 +10,24 @@
 
 #define YYMAXFILL 6
 
-bool process(process_t *scanner)
+bool process(process_t *scanner, const char *msg)
 {
-    const char *YYMARKER=0;
-    const char *s = scanner->stok;
+    char *cursor = scanner->token = scanner->cursor;
+    char *marker=0;
+
+#ifdef SCANNER_DEBUG
+    if ( msg ) {
+        scanner->print_cursor(msg);
+    }
+#endif
+
 loop:
     
-#line 20 "process.cpp"
+#line 27 "process.cpp"
 {
 	char yych;
 	unsigned int yyaccept = 0;
-	yych = *s;
+	yych = *cursor;
 	switch (yych) {
 	case 0x00:
 	case '\r':	goto yy2;
@@ -49,31 +56,31 @@ loop:
 	default:	goto yy4;
 	}
 yy2:
-	++s;
-#line 27 "process.re"
-	{ scanner->tok=END;     goto process_exit; }
-#line 56 "process.cpp"
+	++cursor;
+#line 35 "process.re"
+	{ scanner->token_id=END;       goto process_exit; }
+#line 63 "process.cpp"
 yy4:
-	++s;
+	++cursor;
 yy5:
-#line 28 "process.re"
-	{ scanner->tok=yych;    goto process_exit; }
-#line 62 "process.cpp"
+#line 36 "process.re"
+	{ scanner->token_id=yych;      goto process_exit; }
+#line 69 "process.cpp"
 yy6:
-	++s;
-	yych = *s;
+	++cursor;
+	yych = *cursor;
 	switch (yych) {
 	case '\t':
 	case ' ':	goto yy6;
 	default:	goto yy8;
 	}
 yy8:
-#line 29 "process.re"
-	{ scanner->stok=s;      goto loop;         }
-#line 74 "process.cpp"
+#line 37 "process.re"
+	{ scanner->token=cursor;       goto loop;         }
+#line 81 "process.cpp"
 yy9:
-	++s;
-	yych = *s;
+	++cursor;
+	yych = *cursor;
 	switch (yych) {
 	case '0':
 	case '1':
@@ -88,18 +95,18 @@ yy9:
 	default:	goto yy11;
 	}
 yy11:
-#line 30 "process.re"
-	{ scanner->tok=DEC;     goto process_exit; }
-#line 94 "process.cpp"
+#line 38 "process.re"
+	{ scanner->token_id=DEC;       goto process_exit; }
+#line 101 "process.cpp"
 yy12:
-	++s;
+	++cursor;
 yy13:
-#line 31 "process.re"
-	{ scanner->tok=HELP;    goto process_exit; }
-#line 100 "process.cpp"
+#line 39 "process.re"
+	{ scanner->token_id=HELP;      goto process_exit; }
+#line 107 "process.cpp"
 yy14:
 	yyaccept = 0;
-	yych = *(YYMARKER = ++s);
+	yych = *(marker = ++cursor);
 	switch (yych) {
 	case 'L':
 	case 'l':	goto yy19;
@@ -107,7 +114,7 @@ yy14:
 	}
 yy15:
 	yyaccept = 1;
-	yych = *(YYMARKER = ++s);
+	yych = *(marker = ++cursor);
 	switch (yych) {
 	case 'E':
 	case 'e':	goto yy21;
@@ -115,7 +122,7 @@ yy15:
 	}
 yy16:
 	yyaccept = 0;
-	yych = *(YYMARKER = ++s);
+	yych = *(marker = ++cursor);
 	switch (yych) {
 	case 'E':
 	case 'e':	goto yy22;
@@ -123,7 +130,7 @@ yy16:
 	}
 yy17:
 	yyaccept = 0;
-	yych = *(YYMARKER = ++s);
+	yych = *(marker = ++cursor);
 	switch (yych) {
 	case 'F':
 	case 'f':	goto yy23;
@@ -133,135 +140,139 @@ yy17:
 	}
 yy18:
 	yyaccept = 0;
-	yych = *(YYMARKER = ++s);
+	yych = *(marker = ++cursor);
 	switch (yych) {
 	case 'P':
 	case 'p':	goto yy26;
 	default:	goto yy5;
 	}
 yy19:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'I':
 	case 'i':	goto yy27;
 	default:	goto yy20;
 	}
 yy20:
-	s = YYMARKER;
+	cursor = marker;
 	if (yyaccept == 0) {
 		goto yy5;
 	} else {
 		goto yy13;
 	}
 yy21:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'L':
 	case 'l':	goto yy28;
 	default:	goto yy20;
 	}
 yy22:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'D':
 	case 'd':	goto yy29;
 	default:	goto yy20;
 	}
 yy23:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'F':
 	case 'f':	goto yy31;
 	default:	goto yy20;
 	}
 yy24:
-	++s;
-#line 36 "process.re"
-	{ scanner->tok=ON;      goto process_exit; }
-#line 182 "process.cpp"
+	++cursor;
+#line 44 "process.re"
+	{ scanner->token_id=ON;        goto process_exit; }
+#line 189 "process.cpp"
 yy26:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'T':
 	case 't':	goto yy33;
 	default:	goto yy20;
 	}
 yy27:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'N':
 	case 'n':	goto yy34;
 	default:	goto yy20;
 	}
 yy28:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'P':
 	case 'p':	goto yy12;
 	default:	goto yy20;
 	}
 yy29:
-	++s;
-#line 32 "process.re"
-	{ scanner->tok=LED;     goto process_exit; }
-#line 208 "process.cpp"
+	++cursor;
+#line 40 "process.re"
+	{ scanner->token_id=LED;       goto process_exit; }
+#line 215 "process.cpp"
 yy31:
-	++s;
-#line 35 "process.re"
-	{ scanner->tok=OFF;     goto process_exit; }
-#line 213 "process.cpp"
+	++cursor;
+#line 43 "process.re"
+	{ scanner->token_id=OFF;       goto process_exit; }
+#line 220 "process.cpp"
 yy33:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'I':
 	case 'i':	goto yy35;
 	default:	goto yy20;
 	}
 yy34:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'K':
 	case 'k':	goto yy36;
 	default:	goto yy20;
 	}
 yy35:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'M':
 	case 'm':	goto yy38;
 	default:	goto yy20;
 	}
 yy36:
-	++s;
-#line 33 "process.re"
-	{ scanner->tok=BLINK;   goto process_exit; }
-#line 239 "process.cpp"
+	++cursor;
+#line 41 "process.re"
+	{ scanner->token_id=BLINK;     goto process_exit; }
+#line 246 "process.cpp"
 yy38:
-	yych = *++s;
+	yych = *++cursor;
 	switch (yych) {
 	case 'E':
 	case 'e':	goto yy39;
 	default:	goto yy20;
 	}
 yy39:
-	++s;
-#line 34 "process.re"
-	{ scanner->tok=UPTIME;  goto process_exit; }
-#line 251 "process.cpp"
+	++cursor;
+#line 42 "process.re"
+	{ scanner->token_id=UPTIME;    goto process_exit; }
+#line 258 "process.cpp"
 }
-#line 37 "process.re"
+#line 45 "process.re"
 
 
 process_exit:
-    scanner->cursor = s; // set up YYCURSOR scan
-    scanner->len = (scanner->cursor - scanner->stok);
+    scanner->cursor = cursor;  // save cursor for next scan
+    scanner->len = (scanner->cursor - scanner->token);
 
-    if ( scanner->tok == DEC) {
-        scanner->value = strtol(scanner->stok,0,10);
+    if ( scanner->token_id == DEC) {
+        scanner->value = strtol(scanner->token,0,10);
     }
     else {
         scanner->value = 0;
     }
+
+#ifdef SCANNER_DEBUG
+   scanner->print("found:");
+#endif
         
-    return ( scanner->tok == END ) ? true : false;
+    return ( scanner->token_id == END ) ? true : false;
 }
