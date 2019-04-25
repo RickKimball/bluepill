@@ -207,7 +207,7 @@ void _init(void) {
 int main(void) {
 
   // blink task
-  Scheduler.startLoop(blink_task,512);
+  Scheduler.startLoop(blink_task,1024);
 
   // command line processor task
   task0();
@@ -253,27 +253,18 @@ void blink_task() {
  task0() - main task loop, spew tickcnt
  */
 void task0() {
-  printf("\nexample08 - led command line processor\n");
-  fprintf(stdout,prompt); fflush(stdout);
-
+  printf("\nexample08 - led command line processor\n\%s", prompt);
+  fflush(stdout);
 
   while(1) {
     int rc, c;
 
     if ( (rc=read(0,&c,1)) > 0) {
       add_command_ch(c);
-
       if ( c == 0x0d) {
-        write(1,"\n",1);
         command_handler();
         pbuf = input_buf; // reset input buffer pointer to start
         fprintf(stdout,prompt); fflush(stdout);
-      }
-      else {
-        write(1,&c,1);
-        if ( BACKSPACE == 8 ) {
-          write(1," \x8",2);
-        }
       }
     }
   }
@@ -281,24 +272,43 @@ void task0() {
 
 /*---------------------------------------------------------------------
  add_command_ch()) - safely append input character to buffer with 
-                     overflow protection and backspace
-                     assumes backspace is DEL (127)
+                     overflow protection and backspace assumes
+                     backspace is DEL (127) but also works with CTRL-H
+
  */
 void add_command_ch(int c) {
-  if ( pbuf < pbufend ) {
-    if ( c == BACKSPACE )  {  // deal with delete
-      if (pbuf > input_buf ) {
-        pbuf--;
+  switch(c) {
+    case 8:
+      if ( pbuf-1 >= input_buf )
+        write(1, "\b ",2);
+      /* fall through on purpose */
+    case 127:
+      if ( pbuf-1 >= input_buf ) {
+        --pbuf;
+        write(1,&c,1);
       }
-      else {
-        fprintf(stdout,"\r%s ", prompt); fflush(stdout);
-      }
-    } 
-    else {
+      break;
+
+    // '\r' is the expected enter key value
+    //      and END for lexer
+    case 0x0d:
       *pbuf++ = c;
-    }
+      write(1,"\n",1);
+      break;
+
+    // don't output the unmatchables
+    case 0xff:
+      *pbuf++ = c;
+      break;
+
+    default:
+      if ( pbuf < pbufend ) {
+        *pbuf++ = c;
+        write(1,&c,1);
+      }
+      break;
   }
-}
+ }
 
 /*---------------------------------------------------------------------
  command_handler() - process the command line using re2c 
