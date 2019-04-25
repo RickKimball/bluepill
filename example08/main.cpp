@@ -323,77 +323,9 @@ void command_handler() {
 
   while (1) {
     process(scanner, SCANNER_DEBUG_MSG("led|help|uptime|'\\r'"));
-    switch (scanner->token_id) {
-      case LED:
-        process(scanner, SCANNER_DEBUG_MSG("on|off|blink|'\\r'"));
-        switch (scanner->token_id) {
-          case ON:
-            update_blink_settings(LED_ON_STATE);
-            return;
 
-          case OFF:
-            update_blink_settings(LED_OFF_STATE);
-            return;
-
-          case BLINK:
-            {
-            int on=500, off=500;
-            
-            process(scanner,SCANNER_DEBUG_MSG("DEC|'\\r'"));
-            switch (scanner->token_id) {
-              case DEC:
-                on = off = scanner->value;
-                process(scanner,SCANNER_DEBUG_MSG("','|'\\r'"));
-                switch (scanner->token_id) {
-                  case ',':
-                    process(scanner,SCANNER_DEBUG_MSG("DEC|'\\r'"));
-                    switch (scanner->token_id) {
-                      case DEC:
-                        update_blink_settings(on, scanner->value);
-                        return;
-
-                      case END:
-                      default:
-                        printf("Error: invalid led blink offtime\n");
-                        return;
-                    }  // end ','
-
-                  case END:
-                  default:
-                    update_blink_settings(on, on);
-                    return;
-                } // end LED BLINK DEC
- 
-              case END:
-                update_blink_settings();
-                return;
-
-              default:
-                printf("Error: invalid led blink ontime\n");
-                return;
-            }  // end BLINK
-            }
-            break;
-
-          case END:
-            printf("led is %s",
-                    (
-                    led_state == LED_ON_STATE ? "On" :
-                    led_state == LED_OFF_STATE ? "Off" : "Blinking"
-                    )
-                  );
-            if ( led_state == LED_BLINK_STATE) {
-              printf(" on time is %d, off time is %d", on_time, off_time);
-            }
-            printf("\n");
-            return;
-
-          default:
-            printf("Error: invalid led argument\n");
-            return;
-        }
-
-      case HELP:
+    // command> help\r
+    if ( scanner->token_id == HELP) {
         printf("Help:\n"
               "  help | 'h' | '?'         - display this message\n"
               "  led                      - display led settings\n"
@@ -405,18 +337,110 @@ void command_handler() {
               "  uptime                   - display msecs since power on\n"
         );
         return;
+    }
 
-      case UPTIME:
+    // command> led args...
+    if ( scanner-> token_id == LED ) {
+      static const int max_led_args=5;
+      process_t led_scan_stack[max_led_args];
+      int scan_indx=0;
+
+      // to find the END token, bail after 5 args
+      do {
+#ifdef SCANNER_DEBUG
+        static const char *target[] = {
+          "on|off|blink|\\r",
+          "DEC|\\r",
+          ",|\\r",
+          "DEC",
+          "\\r"
+        };
+        char msgbuf[32]; sprintf(msgbuf,"%s",target[scan_indx]);
+        printf("scan_indx=%d\n",scan_indx);
+#endif
+        process(scanner,SCANNER_DEBUG_MSG(msgbuf));
+        led_scan_stack[scan_indx++]=*scanner;
+      } while(scan_indx < max_led_args && scanner->token_id != END );
+
+      // command> led\r
+      if  ( scan_indx == 1 &&
+            led_scan_stack[0].token_id == END
+          )
+      {
+            printf("led is %s",
+                    (
+                    led_state == LED_ON_STATE ? "On" :
+                    led_state == LED_OFF_STATE ? "Off" : "Blinking"
+                    )
+                  );
+            if ( led_state == LED_BLINK_STATE) {
+              printf(" on time is %d, off time is %d", on_time, off_time);
+            }
+            printf("\n");
+            return;
+      }
+
+      // command> led blink\r
+      if  ( scan_indx == 2 &&
+            led_scan_stack[0].token_id == BLINK &&
+            led_scan_stack[1].token_id == END
+          )
+      {
+        update_blink_settings();
+        return;
+      }
+
+      // command> led on|off\r
+      if  ( scan_indx == 2 && 
+            (led_scan_stack[0].token_id == ON || led_scan_stack[0].token_id == ON ) &&
+            led_scan_stack[1].token_id == END
+          )
+      {
+        update_blink_settings((led_scan_stack[0].token_id==ON ? LED_ON_STATE: LED_OFF_STATE));
+        return;
+      }
+
+      // command> led blink DEC\r
+      if  ( scan_indx == 3 && 
+            led_scan_stack[0].token_id == BLINK &&
+            led_scan_stack[1].token_id == DEC &&
+            led_scan_stack[2].token_id == END
+          )
+      {
+        update_blink_settings(led_scan_stack[1].value,led_scan_stack[1].value);
+        return;
+      }
+
+      // command> led blink DEC,DEC\r
+      if  ( scan_indx == 5 && 
+            led_scan_stack[0].token_id == BLINK &&
+            led_scan_stack[1].token_id == DEC   &&
+            led_scan_stack[2].token_id == ','   &&
+            led_scan_stack[3].token_id == DEC   &&
+            led_scan_stack[4].token_id == END
+          )
+      {
+        update_blink_settings(led_scan_stack[1].value,led_scan_stack[3].value);
+        return;
+      }
+
+      printf("Error: invalid led arguments\n");
+      return;
+    }
+
+    // command> uptime\r
+    if ( scanner->token_id == UPTIME ) {
         printf("up %d msecs\n", tickcnt);
         return;
-
-      case END:
-        return;
-
-      default:
-        printf("Error: invalid command\n");
-        return;
     }
+
+    // command> \r
+    if ( scanner->token_id == END) {
+      return;
+    }
+
+    printf("Error: invalid command\n");
+    return;
   }
 }
 
