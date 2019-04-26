@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------
-  main.cpp - example07 cooperative multi-tasking USART1/Blink sample
+  main.cpp - example08 cooperative multi-tasking USART1/Blink sample
 
   Assumes a USB dongle connected to PA9 for 115200,8,n,1
 */
