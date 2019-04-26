@@ -311,6 +311,59 @@ void add_command_ch(int c) {
  }
 
 /*---------------------------------------------------------------------
+ cmd_led_blink - set blink mode with default 500msec on off
+ */
+static void cmd_led_display(process_t *tokens) {
+  printf("led is %s",
+          (
+          led_state == LED_ON_STATE ? "On" :
+          led_state == LED_OFF_STATE ? "Off" : "Blinking"
+          )
+        );
+  if ( led_state == LED_BLINK_STATE) {
+    printf(" on time is %d, off time is %d", on_time, off_time);
+  }
+  printf("\n");
+}
+
+/*---------------------------------------------------------------------
+ cmd_led_blink_1 - set blink mode on time used for both on and off
+ */
+static void cmd_led_blink_1(process_t *tokens) {
+  update_blink_settings(tokens[2].value,tokens[2].value);
+}
+
+/*---------------------------------------------------------------------
+ cmd_led_blink_2 - set blink mode with on and off time
+ */
+static void cmd_led_blink_2(process_t *tokens) {
+  update_blink_settings(tokens[2].value,tokens[4].value);
+}
+
+/*---------------------------------------------------------------------
+ cmd_help - display help 
+ */
+static void cmd_help(process_t *tokens) {
+  printf("Help:\n"
+        "  help | 'h' | '?'         - display this message\n"
+        "  led                      - display led settings\n"
+        "  led off                  - led off\n"
+        "  led on                   - led on no blink\n"
+        "  led blink                - led blink on 500 msec, off for 500 msec\n"
+        "  led blink msec           - led blink on for msec and then off for msec\n"
+        "  led blink ontime,offtime - on for ontime, off for offtime\n"
+        "  uptime                   - display msecs since power on\n"
+  );
+}
+
+static void cmd_uptime(process_t *tokens) {
+  printf("up %d msecs\n", tickcnt);
+  return;
+}
+
+#define sizeofs(a) (int)(sizeof(a)/sizeof(a[0]))
+
+/*---------------------------------------------------------------------
  command_handler() - process the command line using re2c 
                      generated process() function
  */
@@ -320,127 +373,77 @@ void command_handler() {
 
   process_t process_scanner = {input_buf, 0, 0, 0, 0};
   process_t * scanner = &process_scanner;
+  
+  // structure to describe a token match along with its handler function
+  struct match_t {
+    int arg_cnt;
+    int token_pattern[7];
+    void (*cmd_handler)(process_t *);
+  };
+
+  // describe the valid match patterns
+  static struct match_t match_targets[] = {
+    { 1, {END}, [](process_t *){ return;}},
+    { 2, {LED,    END}, cmd_led_display},
+    { 2, {HELP,   END}, cmd_help},
+    { 2, {UPTIME, END}, cmd_uptime},
+    { 3, {LED,    BLINK, END}, [](process_t *){ update_blink_settings();}},
+    { 3, {LED,    ON,    END}, [](process_t *){ update_blink_settings(LED_ON_STATE);}},
+    { 3, {LED,    OFF,   END}, [](process_t *){ update_blink_settings(LED_OFF_STATE);}},
+    { 4, {LED,    BLINK, DEC, END}, cmd_led_blink_1},
+    { 6, {LED,    BLINK, DEC, ',', DEC, END}, cmd_led_blink_2},
+  };
 
   while (1) {
-    process(scanner, SCANNER_DEBUG_MSG("led|help|uptime|'\\r'"));
-
-    // command> help\r
-    if ( scanner->token_id == HELP) {
-        printf("Help:\n"
-              "  help | 'h' | '?'         - display this message\n"
-              "  led                      - display led settings\n"
-              "  led off                  - led off\n"
-              "  led on                   - led on no blink\n"
-              "  led blink                - led blink on 500 msec, off for 500 msec\n"
-              "  led blink msec           - led blink on for msec and then off for msec\n"
-              "  led blink ontime,offtime - on for ontime, off for offtime\n"
-              "  uptime                   - display msecs since power on\n"
-        );
-        return;
-    }
-
-    // command> led args...
-    if ( scanner-> token_id == LED ) {
-      static const int max_led_args=5;
-      process_t led_scan_stack[max_led_args];
-      int scan_indx=0;
-
+      static const int max_tokens=6;
+      process_t tokens[max_tokens];
+      int arg_cnt=0;
+  
+      bool done=false;
       // to find the END token, bail after 5 args
-      do {
+      for ( arg_cnt=0; !done && arg_cnt < max_tokens; ++arg_cnt) {
 #ifdef SCANNER_DEBUG
-        static const char *target[] = {
-          "on|off|blink|\\r",
-          "DEC|\\r",
-          ",|\\r",
-          "DEC",
-          "\\r"
+        static const char *target_tokens[] = {
+        "led|help|uptime|'\\r'",
+        "on|off|blink|\\r",
+        "DEC|\\r",
+        ",|\\r",
+        "DEC",
+        "\\r"
         };
-        char msgbuf[32]; sprintf(msgbuf,"%s",target[scan_indx]);
-        printf("scan_indx=%d\n",scan_indx);
+
+        char msgbuf[32]; sprintf(msgbuf,"%s",target_tokens[arg_cnt]);
 #endif
-        process(scanner,SCANNER_DEBUG_MSG(msgbuf));
-        led_scan_stack[scan_indx++]=*scanner;
-      } while(scan_indx < max_led_args && scanner->token_id != END );
+        done=process(scanner,SCANNER_DEBUG_MSG(msgbuf));
+        tokens[arg_cnt]=*scanner;
+      }
 
-      // command> led\r
-      if  ( scan_indx == 1 &&
-            led_scan_stack[0].token_id == END
-          )
-      {
-            printf("led is %s",
-                    (
-                    led_state == LED_ON_STATE ? "On" :
-                    led_state == LED_OFF_STATE ? "Off" : "Blinking"
-                    )
-                  );
-            if ( led_state == LED_BLINK_STATE) {
-              printf(" on time is %d, off time is %d", on_time, off_time);
+      while( 1 ) {
+        for (int match_indx=0; match_indx < sizeofs(match_targets); ++match_indx) {
+
+          if ( match_targets[match_indx].arg_cnt == arg_cnt ) {
+            bool is_match=true;
+            match_t target=match_targets[match_indx];
+
+            for ( int x=0; x < arg_cnt; ++x ) {
+              if ( tokens[x].token_id != target.token_pattern[x]) {
+                is_match = false;
+                break;
+              }
             }
-            printf("\n");
-            return;
+
+            if ( is_match ) {
+              target.cmd_handler(tokens);
+              return;
+            }
+          }
+        }
+
+        printf("Error: invalid command\n");
+        return;
+        break;
       }
 
-      // command> led blink\r
-      if  ( scan_indx == 2 &&
-            led_scan_stack[0].token_id == BLINK &&
-            led_scan_stack[1].token_id == END
-          )
-      {
-        update_blink_settings();
-        return;
-      }
-
-      // command> led on|off\r
-      if  ( scan_indx == 2 && 
-            (led_scan_stack[0].token_id == ON || led_scan_stack[0].token_id == ON ) &&
-            led_scan_stack[1].token_id == END
-          )
-      {
-        update_blink_settings((led_scan_stack[0].token_id==ON ? LED_ON_STATE: LED_OFF_STATE));
-        return;
-      }
-
-      // command> led blink DEC\r
-      if  ( scan_indx == 3 && 
-            led_scan_stack[0].token_id == BLINK &&
-            led_scan_stack[1].token_id == DEC &&
-            led_scan_stack[2].token_id == END
-          )
-      {
-        update_blink_settings(led_scan_stack[1].value,led_scan_stack[1].value);
-        return;
-      }
-
-      // command> led blink DEC,DEC\r
-      if  ( scan_indx == 5 && 
-            led_scan_stack[0].token_id == BLINK &&
-            led_scan_stack[1].token_id == DEC   &&
-            led_scan_stack[2].token_id == ','   &&
-            led_scan_stack[3].token_id == DEC   &&
-            led_scan_stack[4].token_id == END
-          )
-      {
-        update_blink_settings(led_scan_stack[1].value,led_scan_stack[3].value);
-        return;
-      }
-
-      printf("Error: invalid led arguments\n");
-      return;
-    }
-
-    // command> uptime\r
-    if ( scanner->token_id == UPTIME ) {
-        printf("up %d msecs\n", tickcnt);
-        return;
-    }
-
-    // command> \r
-    if ( scanner->token_id == END) {
-      return;
-    }
-
-    printf("Error: invalid command\n");
-    return;
   }
 }
 
