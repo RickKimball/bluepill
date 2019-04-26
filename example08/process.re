@@ -28,6 +28,7 @@ bool process(process_t *scanner, const char *msg)
       end     = [\x00\r];
       ws      = [ \t]+;
       dec     = [1-9][0-9]*;
+      Hz      = 'Hz';
       help    = 'help' | 'h' | '?';
       uptime  = 'uptime';
 
@@ -37,6 +38,7 @@ bool process(process_t *scanner, const char *msg)
       dec      { scanner->token_id=DEC;       goto process_exit; }
       'blink'  { scanner->token_id=BLINK;     goto process_exit; }
       help     { scanner->token_id=HELP;      goto process_exit; }
+      Hz       { scanner->token_id=HZ;        goto process_exit; }
       'led'    { scanner->token_id=LED;       goto process_exit; }
       'off'    { scanner->token_id=OFF;       goto process_exit; }
       'on'     { scanner->token_id=ON;        goto process_exit; }

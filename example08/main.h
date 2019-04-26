@@ -6,6 +6,7 @@
 #include <stm32f103xb.h>
 #include <cmsis_gcc.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <common.h>
 #include <errno.h>
@@ -43,8 +44,6 @@ static void task0();
 static void blink_task();
 
 static void add_command_ch(int c);
-static void cmd_led_blink_1(process_t *tokens);
-static void cmd_led_blink_2(process_t *tokens);
 static void cmd_led_display(process_t *tokens);
 static void cmd_help(process_t *tokens);
 static void command_handler();
@@ -84,35 +83,53 @@ static const cmd_t cmd_list[] = {
     [](process_t *){ return; }
   },
   { 2, {HELP, END},
-    "help | 'h' | '?'          - display available commands and arguments",
+    "help | 'h' | '?'    - show available commands and arguments",
     cmd_help
   },
   { 2, {LED, END},
-    "led                       - show the current led settings",
+    "led                 - show led settings",
     cmd_led_display
   },
   { 3, {LED, BLINK, END},
-    "led blink                 - enable blink, 1Hz 50% duty",
+    "led blink           - enable blink, on for 500 msecs off for 500 msecs",
     [](process_t *){ update_blink_settings(); }
   },
   { 4, {LED, BLINK, DEC, END},
-    "led blink number          - enable blink, on and off time in msecs",
-     cmd_led_blink_1
+    "led blink number    - enable blink, on for msecs off for msecs",
+     [](process_t * args){ update_blink_settings(args[2].value, args[2].value); },
+  },
+  { 5, {LED, BLINK, DEC, HZ, END},
+    "led blink number Hz - enable blink, enter cycles per second (1Hz, 4Hz, ...)",
+    [](process_t * args){
+      int value = args[2].value*2;
+
+      if ( value > 1000 ) {
+        printf("Error: Hz must be less than 500\n");
+      }
+      else {
+        value = (1000/(args[2].value*2));
+        update_blink_settings(value, value);
+      }
+    },
+  },
+  { 5, {LED, BLINK, DEC, DEC, END},
+    0, // "led blink num1 num2 - enable blink, on for num1, off for num2 in msecs",
+    [](process_t * args){ update_blink_settings(args[2].value, args[3].value); },
   },
   { 6, {LED, BLINK, DEC, ',', DEC, END},
-    "led blink number1,number2 - enable blink, on time, off time in msecs",
-    cmd_led_blink_2
+    "led blink num1,num2 - enable blink, on for num1, off for num2 in msecs",
+    [](process_t * args){ update_blink_settings(args[2].value, args[4].value); },
   },
   { 3, {LED, ON, END},
-    "led on                    - diable blink, force the led on",
+    "led on              - disable blink, force the led on",
     [](process_t *){ update_blink_settings(LED_ON_STATE); }
   },
   { 3, {LED, OFF, END},
-    "led off                   - blink disable, force the led off",
+    "led off             - disable blink, force the led off",
     [](process_t *){ update_blink_settings(LED_OFF_STATE); }
   },
   { 2, {UPTIME, END},
-    "uptime                    - display the elapsed msecs since power on",
+    "uptime              - display the elapsed msecs since power on",
     [](process_t *){ printf("up %d msecs\n", tickcnt); }
   },
 };

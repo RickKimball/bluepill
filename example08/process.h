@@ -13,6 +13,7 @@ enum process_token_t
     BLINK,
     DEC,
     HELP,
+    HZ,
     LED,
     OFF,
     ON,

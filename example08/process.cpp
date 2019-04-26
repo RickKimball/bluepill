@@ -56,13 +56,13 @@ bool process(process_t *scanner, const char *msg)
 	}
 yy2:
 	++cursor;
-#line 34 "process.re"
+#line 35 "process.re"
 	{ scanner->token_id=END;       goto process_exit; }
 #line 62 "process.cpp"
 yy4:
 	++cursor;
 yy5:
-#line 35 "process.re"
+#line 36 "process.re"
 	{ scanner->token_id=yych;      goto process_exit; }
 #line 68 "process.cpp"
 yy6:
@@ -74,7 +74,7 @@ yy6:
 	default:	goto yy8;
 	}
 yy8:
-#line 36 "process.re"
+#line 37 "process.re"
 	{ scanner->token=cursor;       goto loop;         }
 #line 80 "process.cpp"
 yy9:
@@ -94,13 +94,13 @@ yy9:
 	default:	goto yy11;
 	}
 yy11:
-#line 37 "process.re"
+#line 38 "process.re"
 	{ scanner->token_id=DEC;       goto process_exit; }
 #line 100 "process.cpp"
 yy12:
 	++cursor;
 yy13:
-#line 39 "process.re"
+#line 40 "process.re"
 	{ scanner->token_id=HELP;      goto process_exit; }
 #line 106 "process.cpp"
 yy14:
@@ -117,6 +117,8 @@ yy15:
 	switch (yych) {
 	case 'E':
 	case 'e':	goto yy21;
+	case 'Z':
+	case 'z':	goto yy22;
 	default:	goto yy13;
 	}
 yy16:
@@ -124,7 +126,7 @@ yy16:
 	yych = *(marker = ++cursor);
 	switch (yych) {
 	case 'E':
-	case 'e':	goto yy22;
+	case 'e':	goto yy24;
 	default:	goto yy5;
 	}
 yy17:
@@ -132,9 +134,9 @@ yy17:
 	yych = *(marker = ++cursor);
 	switch (yych) {
 	case 'F':
-	case 'f':	goto yy23;
+	case 'f':	goto yy25;
 	case 'N':
-	case 'n':	goto yy24;
+	case 'n':	goto yy26;
 	default:	goto yy5;
 	}
 yy18:
@@ -142,14 +144,14 @@ yy18:
 	yych = *(marker = ++cursor);
 	switch (yych) {
 	case 'P':
-	case 'p':	goto yy26;
+	case 'p':	goto yy28;
 	default:	goto yy5;
 	}
 yy19:
 	yych = *++cursor;
 	switch (yych) {
 	case 'I':
-	case 'i':	goto yy27;
+	case 'i':	goto yy29;
 	default:	goto yy20;
 	}
 yy20:
@@ -163,99 +165,104 @@ yy21:
 	yych = *++cursor;
 	switch (yych) {
 	case 'L':
-	case 'l':	goto yy28;
+	case 'l':	goto yy30;
 	default:	goto yy20;
 	}
 yy22:
+	++cursor;
+#line 41 "process.re"
+	{ scanner->token_id=HZ;        goto process_exit; }
+#line 176 "process.cpp"
+yy24:
 	yych = *++cursor;
 	switch (yych) {
 	case 'D':
-	case 'd':	goto yy29;
+	case 'd':	goto yy31;
 	default:	goto yy20;
 	}
-yy23:
+yy25:
 	yych = *++cursor;
 	switch (yych) {
 	case 'F':
-	case 'f':	goto yy31;
+	case 'f':	goto yy33;
 	default:	goto yy20;
 	}
-yy24:
-	++cursor;
-#line 42 "process.re"
-	{ scanner->token_id=ON;        goto process_exit; }
-#line 188 "process.cpp"
 yy26:
+	++cursor;
+#line 44 "process.re"
+	{ scanner->token_id=ON;        goto process_exit; }
+#line 195 "process.cpp"
+yy28:
 	yych = *++cursor;
 	switch (yych) {
 	case 'T':
-	case 't':	goto yy33;
+	case 't':	goto yy35;
 	default:	goto yy20;
 	}
-yy27:
+yy29:
 	yych = *++cursor;
 	switch (yych) {
 	case 'N':
-	case 'n':	goto yy34;
+	case 'n':	goto yy36;
 	default:	goto yy20;
 	}
-yy28:
+yy30:
 	yych = *++cursor;
 	switch (yych) {
 	case 'P':
 	case 'p':	goto yy12;
 	default:	goto yy20;
 	}
-yy29:
-	++cursor;
-#line 40 "process.re"
-	{ scanner->token_id=LED;       goto process_exit; }
-#line 214 "process.cpp"
 yy31:
 	++cursor;
-#line 41 "process.re"
-	{ scanner->token_id=OFF;       goto process_exit; }
-#line 219 "process.cpp"
+#line 42 "process.re"
+	{ scanner->token_id=LED;       goto process_exit; }
+#line 221 "process.cpp"
 yy33:
-	yych = *++cursor;
-	switch (yych) {
-	case 'I':
-	case 'i':	goto yy35;
-	default:	goto yy20;
-	}
-yy34:
-	yych = *++cursor;
-	switch (yych) {
-	case 'K':
-	case 'k':	goto yy36;
-	default:	goto yy20;
-	}
+	++cursor;
+#line 43 "process.re"
+	{ scanner->token_id=OFF;       goto process_exit; }
+#line 226 "process.cpp"
 yy35:
 	yych = *++cursor;
 	switch (yych) {
-	case 'M':
-	case 'm':	goto yy38;
+	case 'I':
+	case 'i':	goto yy37;
 	default:	goto yy20;
 	}
 yy36:
-	++cursor;
-#line 38 "process.re"
-	{ scanner->token_id=BLINK;     goto process_exit; }
-#line 245 "process.cpp"
+	yych = *++cursor;
+	switch (yych) {
+	case 'K':
+	case 'k':	goto yy38;
+	default:	goto yy20;
+	}
+yy37:
+	yych = *++cursor;
+	switch (yych) {
+	case 'M':
+	case 'm':	goto yy40;
+	default:	goto yy20;
+	}
 yy38:
+	++cursor;
+#line 39 "process.re"
+	{ scanner->token_id=BLINK;     goto process_exit; }
+#line 252 "process.cpp"
+yy40:
 	yych = *++cursor;
 	switch (yych) {
 	case 'E':
-	case 'e':	goto yy39;
+	case 'e':	goto yy41;
 	default:	goto yy20;
 	}
-yy39:
+yy41:
 	++cursor;
-#line 43 "process.re"
+#line 45 "process.re"
 	{ scanner->token_id=UPTIME;    goto process_exit; }
-#line 257 "process.cpp"
+#line 264 "process.cpp"
 }
-#line 44 "process.re"
+#line 46 "process.re"
 
 
   process_exit:

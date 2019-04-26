@@ -268,20 +268,6 @@ void cmd_led_display(process_t *tokens) {
 }
 
 /*---------------------------------------------------------------------
-  cmd_led_blink_1 - set blink mode on time used for both on and off
-  */
-void cmd_led_blink_1(process_t *tokens) {
-  update_blink_settings(tokens[2].value,tokens[2].value);
-}
-
-/*---------------------------------------------------------------------
-  cmd_led_blink_2 - set blink mode with on and off time
-  */
-void cmd_led_blink_2(process_t *tokens) {
-  update_blink_settings(tokens[2].value,tokens[4].value);
-}
-
-/*---------------------------------------------------------------------
   cmd_help - display command list and description
   */
 void cmd_help(process_t *tokens) {
@@ -353,7 +339,20 @@ void command_handler() {
           }
         }
 
-        printf("Error: invalid command\n");
+        if ( tokens[0].token_id == LED ) {
+          if ( tokens[1].token_id == BLINK ) {
+            printf("Error: invalid led blink argument\n");
+          }
+          else {
+            printf("Error: invalid led argument\n");
+          }
+        }
+        else if ( tokens[0].token_id == HELP ) {
+          cmd_help(tokens);
+        }
+        else {
+          printf("Error: invalid command\n");
+        }
         return;
         break;
       }
