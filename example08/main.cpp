@@ -374,36 +374,18 @@ void command_handler() {
   process_t process_scanner = {input_buf, 0, 0, 0, 0};
   process_t * scanner = &process_scanner;
   
-  // structure to describe a token match along with its handler function
-  struct match_t {
-    int arg_cnt;
-    int token_pattern[7];
-    void (*cmd_handler)(process_t *);
-  };
-
-  // describe the valid match patterns
-  static struct match_t match_targets[] = {
-    { 1, {END}, [](process_t *){ return;}},
-    { 2, {LED,    END}, cmd_led_display},
-    { 2, {HELP,   END}, cmd_help},
-    { 2, {UPTIME, END}, cmd_uptime},
-    { 3, {LED,    BLINK, END}, [](process_t *){ update_blink_settings();}},
-    { 3, {LED,    ON,    END}, [](process_t *){ update_blink_settings(LED_ON_STATE);}},
-    { 3, {LED,    OFF,   END}, [](process_t *){ update_blink_settings(LED_OFF_STATE);}},
-    { 4, {LED,    BLINK, DEC, END}, cmd_led_blink_1},
-    { 6, {LED,    BLINK, DEC, ',', DEC, END}, cmd_led_blink_2},
-  };
-
   while (1) {
       static const int max_tokens=6;
       process_t tokens[max_tokens];
       int arg_cnt=0;
   
+      // scan the command input and create an array of found tokens
+      // try to find the END token, bail after 6 parsed tokens
+
       bool done=false;
-      // to find the END token, bail after 5 args
       for ( arg_cnt=0; !done && arg_cnt < max_tokens; ++arg_cnt) {
 #ifdef SCANNER_DEBUG
-        static const char *target_tokens[] = {
+        static const char *scanner_targets[] = {
         "led|help|uptime|'\\r'",
         "on|off|blink|\\r",
         "DEC|\\r",
@@ -412,12 +394,35 @@ void command_handler() {
         "\\r"
         };
 
-        char msgbuf[32]; sprintf(msgbuf,"%s",target_tokens[arg_cnt]);
+        char msgbuf[32]; sprintf(msgbuf,"%s",scanner_targets[arg_cnt]);
 #endif
         done=process(scanner,SCANNER_DEBUG_MSG(msgbuf));
         tokens[arg_cnt]=*scanner;
       }
 
+      // match_t - describes a token match pattern along with its handler function
+      struct match_t {
+        int arg_cnt;
+        int token_pattern[7];
+        void (*cmd_handler)(process_t *);
+      };
+
+      // describe the valid match patterns and the function to call
+      static struct match_t match_targets[] = {
+        { 1, {END}, [](process_t *){ return;}},
+        { 2, {LED,    END}, cmd_led_display},
+        { 2, {HELP,   END}, cmd_help},
+        { 2, {UPTIME, END}, cmd_uptime},
+        { 3, {LED,    BLINK, END}, [](process_t *){ update_blink_settings();}},
+        { 3, {LED,    ON,    END}, [](process_t *){ update_blink_settings(LED_ON_STATE);}},
+        { 3, {LED,    OFF,   END}, [](process_t *){ update_blink_settings(LED_OFF_STATE);}},
+        { 4, {LED,    BLINK, DEC, END}, cmd_led_blink_1},
+        { 6, {LED,    BLINK, DEC, ',', DEC, END}, cmd_led_blink_2},
+      };
+
+      // iterate through the match target table, find entries that match the # of tokens entered
+      //   then iterate through the array of token_ids and try to match with the patterns
+      //     if a match found then invoke the cmd_handler and return
       while( 1 ) {
         for (int match_indx=0; match_indx < sizeofs(match_targets); ++match_indx) {
 
@@ -443,7 +448,6 @@ void command_handler() {
         return;
         break;
       }
-
   }
 }
 
