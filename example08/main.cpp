@@ -20,9 +20,18 @@
 #include "process.h"
 
 #define BAUD 115200
+#define sizeofs(a) (int)(sizeof(a)/sizeof(a[0]))
 
 // shared variables used by blink task and command handler 
 enum led_states { LED_ON_STATE, LED_OFF_STATE, LED_BLINK_STATE};
+
+// cmd_t - describes cmds using token match pattern along with its handler function
+struct cmd_t {
+  int arg_cnt;
+  int token_pattern[6];
+  const char *help;
+  void (*cmd_handler)(process_t *);
+};
 
 /*---------------------------------------------------------------------
  function signatures
@@ -34,6 +43,10 @@ static void task0();
 static void blink_task();
 
 static void add_command_ch(int c);
+static void cmd_led_blink_1(process_t *tokens);
+static void cmd_led_blink_2(process_t *tokens);
+static void cmd_led_display(process_t *tokens);
+static void cmd_help(process_t *tokens);
 static void command_handler();
 static void delay_until(unsigned & tick_start, const unsigned msecs);
 
@@ -63,6 +76,46 @@ static const char prompt[] = { "command> "};
 static char input_buf[79+YYMAXFILL+1];
 static char *pbuf = input_buf;
 static char *pbufend = &input_buf[sizeof(input_buf)-YYMAXFILL-sizeof(prompt)];
+
+// describe the valid match patterns and the function to call
+static const cmd_t cmd_list[] = {
+  { 1, {END},
+    0, // empty command is ok be we don't give help on it
+    [](process_t *){ return; }
+  },
+  { 2, {HELP, END},
+    "help                      - display available commands and arguments",
+    cmd_help
+  },
+  { 2, {LED, END},
+    "led                       - show the current led settings",
+    cmd_led_display
+  },
+  { 3, {LED, BLINK, END},
+    "led blink                 - enable blink, 1Hz 50% duty",
+    [](process_t *){ update_blink_settings();}
+  },
+  { 3, {LED, ON, END},
+    "led on                    - force the led on, blink disabled",
+    [](process_t *){ update_blink_settings(LED_ON_STATE);}
+  },
+  { 3, {LED, OFF, END},
+    "led off                   - force the led off, blink disabled",
+    [](process_t *){ update_blink_settings(LED_OFF_STATE);}
+  },
+  { 4, {LED, BLINK, DEC, END},
+    "led blink number          - enable blink, on and off time in msecs",
+     cmd_led_blink_1
+  },
+  { 6, {LED, BLINK, DEC, ',', DEC, END},
+    "led blink number1,number2 - enable blink, on time, off time in msecs",
+    cmd_led_blink_2
+  },
+  { 2, {UPTIME, END},
+    "uptime                    - display the elapsed msecs since power on",
+    [](process_t *){ printf("up %d msecs\n", tickcnt);}
+  },
+};
 
 /*---------------------------------------------------------------------
  Reset_Handler() - the reset exception handler
@@ -313,7 +366,7 @@ void add_command_ch(int c) {
 /*---------------------------------------------------------------------
  cmd_led_blink - set blink mode with default 500msec on off
  */
-static void cmd_led_display(process_t *tokens) {
+void cmd_led_display(process_t *tokens) {
   printf("led is %s",
           (
           led_state == LED_ON_STATE ? "On" :
@@ -329,39 +382,27 @@ static void cmd_led_display(process_t *tokens) {
 /*---------------------------------------------------------------------
  cmd_led_blink_1 - set blink mode on time used for both on and off
  */
-static void cmd_led_blink_1(process_t *tokens) {
+void cmd_led_blink_1(process_t *tokens) {
   update_blink_settings(tokens[2].value,tokens[2].value);
 }
 
 /*---------------------------------------------------------------------
  cmd_led_blink_2 - set blink mode with on and off time
  */
-static void cmd_led_blink_2(process_t *tokens) {
+void cmd_led_blink_2(process_t *tokens) {
   update_blink_settings(tokens[2].value,tokens[4].value);
 }
 
 /*---------------------------------------------------------------------
- cmd_help - display help 
+ cmd_help - display command list and description
  */
-static void cmd_help(process_t *tokens) {
-  printf("Help:\n"
-        "  help | 'h' | '?'         - display this message\n"
-        "  led                      - display led settings\n"
-        "  led off                  - led off\n"
-        "  led on                   - led on no blink\n"
-        "  led blink                - led blink on 500 msec, off for 500 msec\n"
-        "  led blink msec           - led blink on for msec and then off for msec\n"
-        "  led blink ontime,offtime - on for ontime, off for offtime\n"
-        "  uptime                   - display msecs since power on\n"
-  );
+void cmd_help(process_t *tokens) {
+  printf("**help**\n");
+  for (int i=0; i < sizeofs(cmd_list); ++i ) {
+    if ( cmd_list[i].help)
+      printf("  %s\n",cmd_list[i].help);
+  }
 }
-
-static void cmd_uptime(process_t *tokens) {
-  printf("up %d msecs\n", tickcnt);
-  return;
-}
-
-#define sizeofs(a) (int)(sizeof(a)/sizeof(a[0]))
 
 /*---------------------------------------------------------------------
  command_handler() - process the command line using re2c 
@@ -372,7 +413,7 @@ void command_handler() {
   for (int x = YYMAXFILL - 1; x; --x) add_command_ch(0x0);
 
   process_t process_scanner = {input_buf, 0, 0, 0, 0};
-  process_t * scanner = &process_scanner;
+  process_t * const scanner = &process_scanner;
   
   while (1) {
       static const int max_tokens=6;
@@ -400,45 +441,25 @@ void command_handler() {
         tokens[arg_cnt]=*scanner;
       }
 
-      // match_t - describes a token match pattern along with its handler function
-      struct match_t {
-        int arg_cnt;
-        int token_pattern[7];
-        void (*cmd_handler)(process_t *);
-      };
-
-      // describe the valid match patterns and the function to call
-      static struct match_t match_targets[] = {
-        { 1, {END}, [](process_t *){ return;}},
-        { 2, {LED,    END}, cmd_led_display},
-        { 2, {HELP,   END}, cmd_help},
-        { 2, {UPTIME, END}, cmd_uptime},
-        { 3, {LED,    BLINK, END}, [](process_t *){ update_blink_settings();}},
-        { 3, {LED,    ON,    END}, [](process_t *){ update_blink_settings(LED_ON_STATE);}},
-        { 3, {LED,    OFF,   END}, [](process_t *){ update_blink_settings(LED_OFF_STATE);}},
-        { 4, {LED,    BLINK, DEC, END}, cmd_led_blink_1},
-        { 6, {LED,    BLINK, DEC, ',', DEC, END}, cmd_led_blink_2},
-      };
-
-      // iterate through the match target table, find entries that match the # of tokens entered
+      // iterate through the cmd list table, find entries that match the # of tokens entered
       //   then iterate through the array of token_ids and try to match with the patterns
       //     if a match found then invoke the cmd_handler and return
       while( 1 ) {
-        for (int match_indx=0; match_indx < sizeofs(match_targets); ++match_indx) {
+        for (int cmd_indx=0; cmd_indx < sizeofs(cmd_list); ++cmd_indx) {
 
-          if ( match_targets[match_indx].arg_cnt == arg_cnt ) {
+          if ( cmd_list[cmd_indx].arg_cnt == arg_cnt ) {
             bool is_match=true;
-            match_t target=match_targets[match_indx];
+            const cmd_t & cmd = cmd_list[cmd_indx];
 
-            for ( int x=0; x < arg_cnt; ++x ) {
-              if ( tokens[x].token_id != target.token_pattern[x]) {
+            for ( int token_indx=0; token_indx < arg_cnt; ++token_indx ) {
+              if ( tokens[token_indx].token_id != cmd.token_pattern[token_indx]) {
                 is_match = false;
                 break;
               }
             }
 
             if ( is_match ) {
-              target.cmd_handler(tokens);
+              cmd.cmd_handler(tokens);
               return;
             }
           }
@@ -466,7 +487,6 @@ void update_blink_settings(unsigned on, unsigned off) {
   off_time = off;
   led_state = LED_BLINK_STATE;
 }
-
 
 /*---------------------------------------------------------------------
  delay_until(tick_start, msec) - delay for milliseconds

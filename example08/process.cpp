@@ -3,7 +3,7 @@
 /*----------------------------------------------------------------------
   process.re - re2c source to generate command line tokenizer
  */
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "process.h"
@@ -101,7 +101,7 @@ yy11:
 yy12:
 	++cursor;
 yy13:
-#line 39 "process.re"
+#line 40 "process.re"
 	{ scanner->token_id=HELP;      goto process_exit; }
 #line 107 "process.cpp"
 yy14:
@@ -183,7 +183,7 @@ yy23:
 	}
 yy24:
 	++cursor;
-#line 44 "process.re"
+#line 43 "process.re"
 	{ scanner->token_id=ON;        goto process_exit; }
 #line 189 "process.cpp"
 yy26:
@@ -209,12 +209,12 @@ yy28:
 	}
 yy29:
 	++cursor;
-#line 40 "process.re"
+#line 41 "process.re"
 	{ scanner->token_id=LED;       goto process_exit; }
 #line 215 "process.cpp"
 yy31:
 	++cursor;
-#line 43 "process.re"
+#line 42 "process.re"
 	{ scanner->token_id=OFF;       goto process_exit; }
 #line 220 "process.cpp"
 yy33:
@@ -240,7 +240,7 @@ yy35:
 	}
 yy36:
 	++cursor;
-#line 41 "process.re"
+#line 39 "process.re"
 	{ scanner->token_id=BLINK;     goto process_exit; }
 #line 246 "process.cpp"
 yy38:
@@ -252,7 +252,7 @@ yy38:
 	}
 yy39:
 	++cursor;
-#line 42 "process.re"
+#line 44 "process.re"
 	{ scanner->token_id=UPTIME;    goto process_exit; }
 #line 258 "process.cpp"
 }
@@ -271,8 +271,10 @@ process_exit:
     }
 
 #ifdef SCANNER_DEBUG
-   scanner->print("found:");
+    scanner->print("found:");
 #endif
-        
+
     return ( scanner->token_id == END ) ? true : false;
 }
+
+// vim: set ts=2 sw=2 expandtab :

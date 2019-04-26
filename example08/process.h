@@ -21,9 +21,7 @@ enum process_token_t
     LAST
 };
 
-
 //#define SCANNER_DEBUG
-
 #ifdef SCANNER_DEBUG
  #define SCANNER_DEBUG_MSG(s) (s)
 #else
