@@ -288,74 +288,70 @@ void command_handler() {
 
   process_t process_scanner = {input_buf, 0, 0, 0, 0};
   process_t * const scanner = &process_scanner;
+  static const int max_tokens=6;
+  process_t tokens[max_tokens];
+  int arg_cnt=0;
 
-  while (1) {
-      static const int max_tokens=6;
-      process_t tokens[max_tokens];
-      int arg_cnt=0;
+  // scan the command input and create an array of found tokens
+  // try to find the END token, bail after 6 parsed tokens
 
-      // scan the command input and create an array of found tokens
-      // try to find the END token, bail after 6 parsed tokens
-
-      bool done=false;
-      for ( arg_cnt=0; !done && arg_cnt < max_tokens; ++arg_cnt) {
+  bool done=false;
+  for ( arg_cnt=0; !done && arg_cnt < max_tokens; ++arg_cnt) {
 #ifdef SCANNER_DEBUG
-        static const char *scanner_targets[] = {
-        "led|help|uptime|'\\r'",
-        "on|off|blink|\\r",
-        "DEC|\\r",
-        ",|\\r",
-        "DEC",
-        "\\r"
-        };
+    static const char *scanner_targets[] = {
+    "led|help|uptime|'\\r'",
+    "on|off|blink|\\r",
+    "DEC|\\r",
+    ",|\\r",
+    "DEC",
+    "\\r"
+    };
 
-        char msgbuf[32]; sprintf(msgbuf,"%s",scanner_targets[arg_cnt]);
+    char msgbuf[32]; sprintf(msgbuf,"%s",scanner_targets[arg_cnt]);
 #endif
-        done=process(scanner,SCANNER_DEBUG_MSG(msgbuf));
-        tokens[arg_cnt]=*scanner;
+    done=process(scanner,SCANNER_DEBUG_MSG(msgbuf));
+    tokens[arg_cnt]=*scanner;
+  }
+
+  // iterate through the cmd list table, find entries that match the # of tokens entered
+  //   then iterate through the array of token_ids and try to match with the patterns
+  //     if a match found then invoke the cmd_handler and return
+  while( 1 ) {
+    for (int cmd_indx=0; cmd_indx < sizeofs(cmd_list); ++cmd_indx) {
+
+      if ( cmd_list[cmd_indx].arg_cnt == arg_cnt ) {
+        bool is_match=true;
+        const cmd_t & cmd = cmd_list[cmd_indx];
+
+        for ( int token_indx=0; token_indx < arg_cnt; ++token_indx ) {
+          if ( tokens[token_indx].token_id != cmd.token_pattern[token_indx]) {
+            is_match = false;
+            break;
+          }
+        }
+
+        if ( is_match ) {
+          cmd.cmd_handler(tokens);
+          return;
+        }
       }
+    }
 
-      // iterate through the cmd list table, find entries that match the # of tokens entered
-      //   then iterate through the array of token_ids and try to match with the patterns
-      //     if a match found then invoke the cmd_handler and return
-      while( 1 ) {
-        for (int cmd_indx=0; cmd_indx < sizeofs(cmd_list); ++cmd_indx) {
-
-          if ( cmd_list[cmd_indx].arg_cnt == arg_cnt ) {
-            bool is_match=true;
-            const cmd_t & cmd = cmd_list[cmd_indx];
-
-            for ( int token_indx=0; token_indx < arg_cnt; ++token_indx ) {
-              if ( tokens[token_indx].token_id != cmd.token_pattern[token_indx]) {
-                is_match = false;
-                break;
-              }
-            }
-
-            if ( is_match ) {
-              cmd.cmd_handler(tokens);
-              return;
-            }
-          }
-        }
-
-        if ( tokens[0].token_id == LED ) {
-          if ( tokens[1].token_id == BLINK ) {
-            printf("Error: invalid led blink argument\n");
-          }
-          else {
-            printf("Error: invalid led argument\n");
-          }
-        }
-        else if ( tokens[0].token_id == HELP ) {
-          cmd_help(tokens);
-        }
-        else {
-          printf("Error: invalid command\n");
-        }
-        return;
-        break;
+    if ( tokens[0].token_id == LED ) {
+      if ( tokens[1].token_id == BLINK ) {
+        printf("Error: invalid led blink argument\n");
       }
+      else {
+        printf("Error: invalid led argument\n");
+      }
+    }
+    else if ( tokens[0].token_id == HELP ) {
+      cmd_help(tokens);
+    }
+    else {
+      printf("Error: invalid command\n");
+    }
+    return;
   }
 }
 
