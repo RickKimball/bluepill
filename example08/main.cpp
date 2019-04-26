@@ -1,129 +1,20 @@
 /*---------------------------------------------------------------------
   main.cpp - example08 cooperative multi-tasking USART1/Blink sample
 
-  Assumes a USB dongle connected to PA9 for 115200,8,n,1
+  Desc: command line interface to control an led. Table driven
+        commands using re2c generated token parsing.
+
+  Assumes a USB dongle connected to PA9 for 115200,8,n,1 and PC13
+  active low led.
 */
-#include <stm32f103xb.h>
-#include <cmsis_gcc.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <common.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <sys/times.h>
-#include <sys/unistd.h>
-#include <inttypes.h>
-#include <string.h>
-#include <Scheduler.h>
-#include "vectors.h"
-#include "sysclock.h"
-#include "process.h"
-
-#define BAUD 115200
-#define sizeofs(a) (int)(sizeof(a)/sizeof(a[0]))
-
-// shared variables used by blink task and command handler 
-enum led_states { LED_ON_STATE, LED_OFF_STATE, LED_BLINK_STATE};
-
-// cmd_t - describes cmds using token match pattern along with its handler function
-struct cmd_t {
-  int arg_cnt;
-  int token_pattern[6];
-  const char *help;
-  void (*cmd_handler)(process_t *);
-};
+#include "main.h"
 
 /*---------------------------------------------------------------------
- function signatures
- */
-extern "C" void _init(void);
-extern "C" int main(void);
+  Reset_Handler() - the reset exception handler
 
-static void task0();
-static void blink_task();
-
-static void add_command_ch(int c);
-static void cmd_led_blink_1(process_t *tokens);
-static void cmd_led_blink_2(process_t *tokens);
-static void cmd_led_display(process_t *tokens);
-static void cmd_help(process_t *tokens);
-static void command_handler();
-static void delay_until(unsigned & tick_start, const unsigned msecs);
-
-// turn off blinky and turn it always on or off
-static void update_blink_settings(led_states state);
-// default blink is 1Hz 50% duty
-static void update_blink_settings(unsigned on=500, unsigned off=500);
-
-/*---------------------------------------------------------------------
-  globals
+  Sets stack pointer and inits .bss and .data, optionally "color" memory,
+  call global constructors, and finally calls main.
   */
-static const uint32_t APB2_DIV = 1;
-static const uint32_t APB1_DIV = (F_CPU>36000000) ? 2 : 1;
-
-volatile unsigned tickcnt;            // SysTick_Handler msec counter
-
-// shared variables used by blink task and command handler 
-// default startup state is to blink at 1Hz with short msec on time
-volatile led_states led_state=LED_BLINK_STATE;
-volatile unsigned on_time=100, off_time=900; 
-
-// command line task globals
-#define BACKSPACE 127 /* DEL key */
-static const char prompt[] = { "command> "};
-
-// buffers used to hold command line data
-static char input_buf[79+YYMAXFILL+1];
-static char *pbuf = input_buf;
-static char *pbufend = &input_buf[sizeof(input_buf)-YYMAXFILL-sizeof(prompt)];
-
-// describe the valid match patterns and the function to call
-static const cmd_t cmd_list[] = {
-  { 1, {END},
-    0, // empty command is ok be we don't give help on it
-    [](process_t *){ return; }
-  },
-  { 2, {HELP, END},
-    "help                      - display available commands and arguments",
-    cmd_help
-  },
-  { 2, {LED, END},
-    "led                       - show the current led settings",
-    cmd_led_display
-  },
-  { 3, {LED, BLINK, END},
-    "led blink                 - enable blink, 1Hz 50% duty",
-    [](process_t *){ update_blink_settings();}
-  },
-  { 3, {LED, ON, END},
-    "led on                    - force the led on, blink disabled",
-    [](process_t *){ update_blink_settings(LED_ON_STATE);}
-  },
-  { 3, {LED, OFF, END},
-    "led off                   - force the led off, blink disabled",
-    [](process_t *){ update_blink_settings(LED_OFF_STATE);}
-  },
-  { 4, {LED, BLINK, DEC, END},
-    "led blink number          - enable blink, on and off time in msecs",
-     cmd_led_blink_1
-  },
-  { 6, {LED, BLINK, DEC, ',', DEC, END},
-    "led blink number1,number2 - enable blink, on time, off time in msecs",
-    cmd_led_blink_2
-  },
-  { 2, {UPTIME, END},
-    "uptime                    - display the elapsed msecs since power on",
-    [](process_t *){ printf("up %d msecs\n", tickcnt);}
-  },
-};
-
-/*---------------------------------------------------------------------
- Reset_Handler() - the reset exception handler
-
- Sets stack pointer and inits .bss and .data, optionally "color" memory,
- call global constructors, and finally calls main.
- */
-
 void Reset_Handler(void) {
   /* set stack pointer to top of stack memory */
   asm volatile ("ldr r0, =%0" :: "i" (&_estack));
@@ -199,7 +90,7 @@ void Reset_Handler(void) {
 
   /* _init() board, then call any global c/c++ constructors from newlib */
   __libc_init_array();
-  
+
   main();
 
   while(1); /* trap if main exits */
@@ -208,9 +99,8 @@ void Reset_Handler(void) {
 /*---------------------------------------------------------------------
   _init() - initialize board
 
-  NOTE: called from __libc_init() before main().
-        It must be a "C" routine.
-*/
+  NOTE: called from __libc_init() before main(). It must be a "C" routine.
+  */
 void _init(void) {
   RCC->APB2ENR |= 0                                       /* turn on clocks */
                | RCC_APB2ENR_AFIOEN                       /* Alternate IO   */
@@ -255,10 +145,9 @@ void _init(void) {
 }
 
 /*---------------------------------------------------------------------
-  int main() - 
+  int main() -
   */
 int main(void) {
-
   // blink task
   Scheduler.startLoop(blink_task,1024);
 
@@ -269,8 +158,8 @@ int main(void) {
 }
 
 /*---------------------------------------------------------------------
- blink_task() - toggle LED_BUILTIN on/off
- */
+  blink_task() - toggle LED_BUILTIN on/off
+  */
 void blink_task() {
   unsigned start_tick=tickcnt;
 
@@ -303,8 +192,8 @@ void blink_task() {
 }
 
 /*---------------------------------------------------------------------
- task0() - main task loop, spew tickcnt
- */
+  task0() - main task loop, spew tickcnt
+  */
 void task0() {
   printf("\nexample08 - led command line processor\n\%s", prompt);
   fflush(stdout);
@@ -324,11 +213,10 @@ void task0() {
 }
 
 /*---------------------------------------------------------------------
- add_command_ch()) - safely append input character to buffer with 
-                     overflow protection and backspace assumes
-                     backspace is DEL (127) but also works with CTRL-H
-
- */
+  add_command_ch()) - safely append input character to buffer with
+                      overflow protection and backspace assumes
+                      backspace is DEL (127) but also works with CTRL-H
+  */
 void add_command_ch(int c) {
   switch(c) {
     case 8:
@@ -364,8 +252,8 @@ void add_command_ch(int c) {
  }
 
 /*---------------------------------------------------------------------
- cmd_led_blink - set blink mode with default 500msec on off
- */
+  cmd_led_blink - set blink mode with default 500msec on off
+  */
 void cmd_led_display(process_t *tokens) {
   printf("led is %s",
           (
@@ -380,22 +268,22 @@ void cmd_led_display(process_t *tokens) {
 }
 
 /*---------------------------------------------------------------------
- cmd_led_blink_1 - set blink mode on time used for both on and off
- */
+  cmd_led_blink_1 - set blink mode on time used for both on and off
+  */
 void cmd_led_blink_1(process_t *tokens) {
   update_blink_settings(tokens[2].value,tokens[2].value);
 }
 
 /*---------------------------------------------------------------------
- cmd_led_blink_2 - set blink mode with on and off time
- */
+  cmd_led_blink_2 - set blink mode with on and off time
+  */
 void cmd_led_blink_2(process_t *tokens) {
   update_blink_settings(tokens[2].value,tokens[4].value);
 }
 
 /*---------------------------------------------------------------------
- cmd_help - display command list and description
- */
+  cmd_help - display command list and description
+  */
 void cmd_help(process_t *tokens) {
   printf("**help**\n");
   for (int i=0; i < sizeofs(cmd_list); ++i ) {
@@ -405,7 +293,7 @@ void cmd_help(process_t *tokens) {
 }
 
 /*---------------------------------------------------------------------
- command_handler() - process the command line using re2c 
+ command_handler() - tokenize the command line using re2c
                      generated process() function
  */
 void command_handler() {
@@ -414,12 +302,12 @@ void command_handler() {
 
   process_t process_scanner = {input_buf, 0, 0, 0, 0};
   process_t * const scanner = &process_scanner;
-  
+
   while (1) {
       static const int max_tokens=6;
       process_t tokens[max_tokens];
       int arg_cnt=0;
-  
+
       // scan the command input and create an array of found tokens
       // try to find the END token, bail after 6 parsed tokens
 
@@ -473,15 +361,15 @@ void command_handler() {
 }
 
 /*---------------------------------------------------------------------
- update_blink_settings() - toggle LED_BUILTIN on/off
- */
+  update_blink_settings() - toggle LED_BUILTIN on/off
+  */
 void update_blink_settings(led_states state) {
   led_state = state;
 }
 
 /*---------------------------------------------------------------------
- update_blink_settings() - turn on blinky and configure time on and off
- */
+  update_blink_settings() - turn on blinky and configure time on and off
+  */
 void update_blink_settings(unsigned on, unsigned off) {
   on_time = on;
   off_time = off;
@@ -489,23 +377,23 @@ void update_blink_settings(unsigned on, unsigned off) {
 }
 
 /*---------------------------------------------------------------------
- delay_until(tick_start, msec) - delay for milliseconds
+  delay_until(tick_start, msec) - delay for milliseconds
 
- once delay is met, tick_start is updated for the caller.
- */
+    once delay is met, tick_start is updated for the caller.
+  */
 void delay_until(unsigned & tick_start, const unsigned msecs) {
   while( (tickcnt-tick_start) < msecs) {
     yield();
   }
   tick_start += msecs;
   return;
-} 
+}
 
 /*---------------------------------------------------------------------
   SysTick_Handler() - SYSTICK exception handler.
 
-  Increment a 1 msec tick counter each time we get an interrupt
-  from the SYSTICK.
+    Increment a 1 msec tick counter each time we get an interrupt
+    from the SYSTICK.
   */
 
 void SysTick_Handler(void) {
@@ -513,8 +401,8 @@ void SysTick_Handler(void) {
 }
 
 /*---------------------------------------------------------------------
- * _read() - implement usart input
- */
+  _read() - implement usart input w/yield
+  */
 extern "C"
 int _read(int file, char *ptr, int len) {
   switch(file) {
@@ -523,7 +411,7 @@ int _read(int file, char *ptr, int len) {
       while (!(USART1->SR & USART_SR_RXNE)) {
         yield();
       }
-           
+
       *(unsigned *)ptr++ = (USART1->DR & 0xff);
     }
     return len;
@@ -535,10 +423,9 @@ int _read(int file, char *ptr, int len) {
   }
 }
 
-
 /*---------------------------------------------------------------------
- * _write() - implement usart output
- */
+  _write() - implement usart output w/yield
+  */
 extern "C"
 int _write(int file, char *ptr, int len) {
   switch(file) {

@@ -3,7 +3,6 @@
 /*----------------------------------------------------------------------
   process.re - re2c source to generate command line tokenizer
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "process.h"
@@ -12,18 +11,18 @@
 
 bool process(process_t *scanner, const char *msg)
 {
-    char *cursor = scanner->token = scanner->cursor;
-    char *marker=0;
+  char *cursor = scanner->token = scanner->cursor;
+  char *marker=0;
 
-#ifdef SCANNER_DEBUG
-    if ( msg ) {
-        scanner->print_cursor(msg);
-    }
-#endif
+  #ifdef SCANNER_DEBUG
+  if ( msg ) {
+    scanner->print_cursor(msg);
+  }
+  #endif
 
-loop:
+  loop:
     
-#line 27 "process.cpp"
+#line 26 "process.cpp"
 {
 	char yych;
 	unsigned int yyaccept = 0;
@@ -57,15 +56,15 @@ loop:
 	}
 yy2:
 	++cursor;
-#line 35 "process.re"
+#line 34 "process.re"
 	{ scanner->token_id=END;       goto process_exit; }
-#line 63 "process.cpp"
+#line 62 "process.cpp"
 yy4:
 	++cursor;
 yy5:
-#line 36 "process.re"
+#line 35 "process.re"
 	{ scanner->token_id=yych;      goto process_exit; }
-#line 69 "process.cpp"
+#line 68 "process.cpp"
 yy6:
 	++cursor;
 	yych = *cursor;
@@ -75,9 +74,9 @@ yy6:
 	default:	goto yy8;
 	}
 yy8:
-#line 37 "process.re"
+#line 36 "process.re"
 	{ scanner->token=cursor;       goto loop;         }
-#line 81 "process.cpp"
+#line 80 "process.cpp"
 yy9:
 	++cursor;
 	yych = *cursor;
@@ -95,15 +94,15 @@ yy9:
 	default:	goto yy11;
 	}
 yy11:
-#line 38 "process.re"
+#line 37 "process.re"
 	{ scanner->token_id=DEC;       goto process_exit; }
-#line 101 "process.cpp"
+#line 100 "process.cpp"
 yy12:
 	++cursor;
 yy13:
-#line 40 "process.re"
+#line 39 "process.re"
 	{ scanner->token_id=HELP;      goto process_exit; }
-#line 107 "process.cpp"
+#line 106 "process.cpp"
 yy14:
 	yyaccept = 0;
 	yych = *(marker = ++cursor);
@@ -183,9 +182,9 @@ yy23:
 	}
 yy24:
 	++cursor;
-#line 43 "process.re"
+#line 42 "process.re"
 	{ scanner->token_id=ON;        goto process_exit; }
-#line 189 "process.cpp"
+#line 188 "process.cpp"
 yy26:
 	yych = *++cursor;
 	switch (yych) {
@@ -209,14 +208,14 @@ yy28:
 	}
 yy29:
 	++cursor;
-#line 41 "process.re"
+#line 40 "process.re"
 	{ scanner->token_id=LED;       goto process_exit; }
-#line 215 "process.cpp"
+#line 214 "process.cpp"
 yy31:
 	++cursor;
-#line 42 "process.re"
+#line 41 "process.re"
 	{ scanner->token_id=OFF;       goto process_exit; }
-#line 220 "process.cpp"
+#line 219 "process.cpp"
 yy33:
 	yych = *++cursor;
 	switch (yych) {
@@ -240,9 +239,9 @@ yy35:
 	}
 yy36:
 	++cursor;
-#line 39 "process.re"
+#line 38 "process.re"
 	{ scanner->token_id=BLINK;     goto process_exit; }
-#line 246 "process.cpp"
+#line 245 "process.cpp"
 yy38:
 	yych = *++cursor;
 	switch (yych) {
@@ -252,29 +251,29 @@ yy38:
 	}
 yy39:
 	++cursor;
-#line 44 "process.re"
+#line 43 "process.re"
 	{ scanner->token_id=UPTIME;    goto process_exit; }
-#line 258 "process.cpp"
+#line 257 "process.cpp"
 }
-#line 45 "process.re"
+#line 44 "process.re"
 
 
-process_exit:
+  process_exit:
     scanner->cursor = cursor;  // save cursor for next scan
     scanner->len = (scanner->cursor - scanner->token);
 
-    if ( scanner->token_id == DEC) {
-        scanner->value = strtol(scanner->token,0,10);
-    }
-    else {
-        scanner->value = 0;
-    }
+  if ( scanner->token_id == DEC) {
+    scanner->value = strtol(scanner->token,0,10);
+  }
+  else {
+    scanner->value = 0;
+  }
 
-#ifdef SCANNER_DEBUG
-    scanner->print("found:");
-#endif
+  #ifdef SCANNER_DEBUG
+  scanner->print("found:");
+  #endif
 
-    return ( scanner->token_id == END ) ? true : false;
+  return ( scanner->token_id == END ) ? true : false;
 }
 
 // vim: set ts=2 sw=2 expandtab :
