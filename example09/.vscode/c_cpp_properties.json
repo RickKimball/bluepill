@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "linux",
+            "includePath": [
+                ".",
+                "../cmsis",
+                "../include"
+            ],
+            "defines": [
+                "F_CPU=24000000"
+            ],
+            "compilerPath": "/usr/bin/arm-none-eabi-g++ -mcpu=cortex-m3 -mthumb -specs=nano.specs",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}

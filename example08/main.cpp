@@ -10,6 +10,21 @@
 #include "main.h"
 
 /*---------------------------------------------------------------------
+  int main() -
+  */
+int main(void) {
+  setvbuf(stdout, NULL, _IONBF, 0);
+  
+  // blink task
+  Scheduler.startLoop(blink_task,1024);
+
+  // command line processor task
+  task0();
+
+  return 0;
+}
+
+/*---------------------------------------------------------------------
   Reset_Handler() - the reset exception handler
 
   Sets stack pointer and inits .bss and .data, optionally "color" memory,
@@ -144,18 +159,6 @@ void _init(void) {
 #endif
 }
 
-/*---------------------------------------------------------------------
-  int main() -
-  */
-int main(void) {
-  // blink task
-  Scheduler.startLoop(blink_task,1024);
-
-  // command line processor task
-  task0();
-
-  return 0;
-}
 
 /*---------------------------------------------------------------------
   blink_task() - toggle LED_BUILTIN on/off
@@ -196,16 +199,15 @@ void blink_task() {
   */
 void task0() {
   printf("\nexample08 - led command line processor\n\%s", prompt);
-  fflush(stdout);
 
   while(1) {
     int rc, c;
 
     if ( (rc=read(0,&c,1)) > 0) {
-      add_command_ch(c);
+      handle_input_character(c);
       if ( c == 0x0d) {
         command_handler();
-        fprintf(stdout,prompt); fflush(stdout);
+        fprintf(stdout,prompt);
         pbuf = input_buf; // reset input buffer pointer to start
       }
     }
@@ -213,36 +215,35 @@ void task0() {
 }
 
 /*---------------------------------------------------------------------
-  add_command_ch()) - safely append input character to buffer with
-                      overflow protection and backspace assumes
-                      backspace is DEL (127) but also works with CTRL-H
+  handle_input_character()) - append serial input to buffer
+
+    safely append input character to buffer with overflow
+    protection and backspace handling. Assumes backspace is
+    DEL (127)  however CTRL-H also works
   */
-void add_command_ch(int c) {
+void handle_input_character(int c) {
   switch(c) {
-    case 8:
+    case 8:       // '\b'
       if ( pbuf-1 >= input_buf )
         write(1, "\b ",2);
       /* fall through on purpose */
-    case 127:
+    case 127:     // DEL
       if ( pbuf-1 >= input_buf ) {
         --pbuf;
         write(1,&c,1);
       }
       break;
 
-    // '\r' is the expected enter key value
-    //      and END for lexer
-    case 0x0d:
+    case 0x0d:    // '\r' also END token
       *pbuf++ = c;
       write(1,"\n",1);
       break;
 
-    // don't output the unmatchables
-    case 0x00:
+    case 0x0:     // \0x0 unmatchable for YYFILL
       *pbuf++ = c;
       break;
 
-    default:
+    default:      // all other ascii characters
       if ( pbuf < pbufend && c > 31 && c < 127 ) {
         *pbuf++ = c;
         write(1,&c,1);
@@ -283,8 +284,8 @@ void cmd_help(process_t *tokens) {
                      generated process() function
  */
 void command_handler() {
-  // fill end of buffer with unmatchable characters
-  for (int x = YYMAXFILL - 1; x; --x) add_command_ch(0x0);
+  // fill end of buffer after the '\r' with unmatchable characters
+  for (int x = YYMAXFILL - 1; x; --x) handle_input_character(0x0);
 
   process_t process_scanner = {input_buf, 0, 0, 0, 0};
   process_t * const scanner = &process_scanner;
@@ -293,29 +294,34 @@ void command_handler() {
   int arg_cnt=0;
 
   // scan the command input and create an array of found tokens
-  // try to find the END token, bail after 6 parsed tokens
+  // try to find the END token, but bail after a max of 6 tokens
 
   bool done=false;
   for ( arg_cnt=0; !done && arg_cnt < max_tokens; ++arg_cnt) {
-#ifdef SCANNER_DEBUG
-    static const char *scanner_targets[] = {
-    "led|help|uptime|'\\r'",
-    "on|off|blink|\\r",
-    "DEC|\\r",
-    ",|\\r",
-    "DEC",
-    "\\r"
-    };
+    #ifdef SCANNER_DEBUG
+      // give debug hints what each token scan is trying to find
+      static const char *scanner_targets[] = {
+      "led|help|uptime|'\\r'",
+      "on|off|blink|\\r",
+      "DEC|\\r",
+      ",|\\r",
+      "DEC",
+      "\\r"
+      };
+      char msgbuf[32]; sprintf(msgbuf,"%s",scanner_targets[arg_cnt]);
+    #endif
 
-    char msgbuf[32]; sprintf(msgbuf,"%s",scanner_targets[arg_cnt]);
-#endif
+    // parse a token, when END is found it returns true
     done=process(scanner,SCANNER_DEBUG_MSG(msgbuf));
     tokens[arg_cnt]=*scanner;
   }
 
-  // iterate through the cmd list table, find entries that match the # of tokens entered
-  //   then iterate through the array of token_ids and try to match with the patterns
-  //     if a match found then invoke the cmd_handler and return
+  /*
+    Iterate through the cmd list table, find entries that match the
+    number of tokens found. Then iterate through the array of token_ids
+    and try to match with the cmd token patterns.  If a match is found
+    then invoke the cmd_handler and return.
+    */
   while( 1 ) {
     for (int cmd_indx=0; cmd_indx < sizeofs(cmd_list); ++cmd_indx) {
 
@@ -337,6 +343,7 @@ void command_handler() {
       }
     }
 
+    // try to give the error some context .. but not too much :)
     if ( tokens[0].token_id == LED ) {
       if ( tokens[1].token_id == BLINK ) {
         printf("Error: invalid led blink argument\n");
