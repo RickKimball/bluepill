@@ -43,7 +43,7 @@ extern "C" int main(void);
 static void task0();
 static void blink_task();
 
-static void add_command_ch(int c);
+static void handle_input_character(int c);
 static void cmd_led_display(process_t *tokens);
 static void cmd_help(process_t *tokens);
 static void command_handler();
