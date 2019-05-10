@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.re": "cpp",
+        "stm32f030x8.h": "c"
+    }
+}

@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.re": "cpp",
+        "*.ino": "cpp",
         "errno.h": "c",
         "times.h": "c",
         "task.h": "c",

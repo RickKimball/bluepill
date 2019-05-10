@@ -12,7 +12,7 @@
             ],
             "compilerPath": "/usr/bin/arm-none-eabi-g++ -mcpu=cortex-m3 -mthumb -specs=nano.specs",
             "cStandard": "c11",
-            "cppStandard": "c++14",
+            "cppStandard": "c++17",
             "intelliSenseMode": "gcc-x64"
         }
     ],
