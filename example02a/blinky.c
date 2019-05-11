@@ -1,5 +1,7 @@
 #include "stm32f030x8.h"
 
+#define USE_SYSTICK 0
+
 typedef void (* const vector)(void);
 
 extern unsigned _estack; // this comes from stm32f030r8.ld
@@ -11,21 +13,21 @@ __attribute((section(".isr_vectors")))
 const vector vector_table[] = 
 {
   (void *)&_estack, setup
-#if 0
+#if USE_SYSTICK
   ,[15]=loop
 #endif
 };
 
-void setup(void) {
+void setup(void) { // ENTRY in stm32f030r8.ld points at this function
   RCC->AHBENR  = 0x00000014 | RCC_AHBENR_GPIOAEN;
   GPIOA->MODER = 0x28000000 | 0b01 << 10;
 
-#if 0
+#if SYSTICK
   SysTick->LOAD = (8000000/2)-1;
-  SysTick->VAL   = 0UL;                                             /* Load the SysTick Counter Value */
+  SysTick->VAL   = 0UL;                         /* Load the SysTick Counter Value */
   SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
                    SysTick_CTRL_TICKINT_Msk   |
-                   SysTick_CTRL_ENABLE_Msk;                         /* Enable SysTick IRQ and SysTick Timer */
+                   SysTick_CTRL_ENABLE_Msk;     /* Enable SysTick IRQ and SysTick Timer */
 #else
   loop();
 #endif
@@ -33,7 +35,7 @@ void setup(void) {
   while(1);
 }
 
-#if 0 
+#if SYSTICK
 void loop() {
   GPIOA->ODR ^= 1 << 5;
 }
