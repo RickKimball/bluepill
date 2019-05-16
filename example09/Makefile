@@ -57,7 +57,7 @@ OBJREADELF = $(GCC_PATH)$(PREFIX)readelf
 SIZE       = $(GCC_PATH)$(PREFIX)size
 
 #--------------------------------------------------------------------------------
-NEWLIB_NANO=--specs=nano.specs --specs=nosys.specs
+NEWLIB_NANO=-specs=nano.specs -specs=nosys.specs
 TARGET_ARCH = -mcpu=cortex-m3 -mthumb
 
 CPPFLAGS = \
